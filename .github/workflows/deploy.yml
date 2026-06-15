@@ -5,7 +5,7 @@ on:
     branches:
       - dev
     paths:
-      - src/
+      - src/**
       - Dockerfile
       - entrypoint.sh
       - pyproject.toml
