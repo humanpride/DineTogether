@@ -8,6 +8,7 @@ on:
       - infra/docker-compose.yaml
       - infra/nginx.conf
       - infra/.env.example
+  workflow_dispatch:
 
 jobs:
   update:
