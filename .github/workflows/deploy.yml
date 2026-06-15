@@ -2,14 +2,23 @@ name: Deploy DineTogether
 
 on:
   push:
-    branches: [ develop, main ]
+    branches:
+      - dev
+    paths:
+      - src/
+      - Dockerfile
+      - entrypoint.sh
+      - pyproject.toml
+      - uv.lock
   workflow_dispatch:
 
 jobs:
   style-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
       - uses: actions/checkout@v6
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -26,33 +35,35 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     needs: style-check
-    steps:
-      - uses: actions/checkout@v6
-      - name: Copy files to server
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "infra/,Dockerfile,entrypoint.sh"
-          target: "/opt/booking/"
 
-      - name: Login to Docker Hub
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Login to DockerHub
         uses: docker/login-action@v4.2.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Setup buildx
+        uses: docker/setup-buildx-action@v4.1
+
+      - name: Build and push to DockerHub
         uses: docker/build-push-action@v7.2.0
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/cafe-booking:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/dinetogether:latest
+            ${{ secrets.DOCKER_USERNAME }}/dinetogether:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
+
     steps:
       - name: Deploy
         uses: appleboy/ssh-action@v1.2.5
@@ -61,11 +72,11 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/booking/infra
+            cd /home/dinetogether
             docker compose pull
             docker compose up -d
             docker system prune -f
             echo "=== Container status ==="
             docker compose ps
-            echo "=== App logs (last 20 lines) ==="
-            docker compose logs app --tail=20
+            echo "=== App logs (last 30 lines) ==="
+            docker compose logs app --tail=30
