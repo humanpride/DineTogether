@@ -24,8 +24,5 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: |
-            infra/docker-compose.yaml
-            infra/nginx.conf
-            infra/.env.example
+          source: "infra/docker-compose.yaml,infra/nginx.conf,infra/.env.example"
           target: ${{ secrets.SERVER_PROJECT_PATH }}
