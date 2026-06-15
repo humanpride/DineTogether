@@ -111,4 +111,5 @@ async def validation_exception_handler(
 
 
 if __name__ == '__main__':
+    # бд и остальные сервисы тут не стартуют
     uvicorn.run(app, host='0.0.0.0', port=8000)
