@@ -1,0 +1,34 @@
+[project]
+name = "DineTogether"
+version = "2.0.0"
+description = "Сервис бронирования мест в кафе"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "aiosmtplib>=5.1.1",
+    "alembic>=1.18.4",
+    "asyncpg>=0.31.0",
+    "bcrypt==4.0.1",
+    "celery>=5.6.3",
+    "email-validator>=2.3.0",
+    "fastapi>=0.136.1",
+    "flower>=2.0.1",
+    "jinja2>=3.1.6",
+    "passlib[bcrypt]>=1.7.4",
+    "phonenumbers>=9.0.31",
+    "pillow>=12.2.0",
+    "pydantic>=2.13.3",
+    "pydantic-extra-types>=2.11.1",
+    "pydantic-settings>=2.14.0",
+    "python-jose>=3.5.0",
+    "python-multipart>=0.0.32",
+    "sqlalchemy[asyncio]>=2.0.49",
+    "uvicorn>=0.46.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "ruff>=0.15.12",
+]

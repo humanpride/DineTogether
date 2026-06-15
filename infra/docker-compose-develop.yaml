@@ -1,0 +1,93 @@
+name: DineTogether
+
+networks:
+  cafe-network:
+
+services:
+  db:
+    image: postgres:17-alpine
+    networks:
+      - cafe-network
+    env_file:
+      - ./.env
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - "pgdata:/var/lib/postgresql/data/pgdata"
+    command: >
+      postgres -c max_connections=1000
+               -c shared_buffers=256MB
+               -c effective_cache_size=768MB
+               -c maintenance_work_mem=64MB
+               -c checkpoint_completion_target=0.7
+               -c wal_buffers=16MB
+               -c default_statistics_target=100
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
+      interval: 6s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    networks:
+      - cafe-network
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: $RABBIT_USER
+      RABBITMQ_DEFAULT_PASS: $RABBIT_USER_PASS
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 8s
+      timeout: 7s
+      retries: 5
+
+  app:
+    build: ../
+    networks:
+      - cafe-network
+    env_file:
+      - ./.env
+    ports:
+      - "8000:8000"
+      - "5555:5555"
+    volumes:
+      - logs:/app/logs
+      - media_volume:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    networks:
+      - cafe-network
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+
+  maildev:
+    image: maildev/maildev
+    networks:
+      - cafe-network
+    environment:
+      - TZ=Europe/Moscow
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  media_volume:
+  logs:
