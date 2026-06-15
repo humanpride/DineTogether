@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # Общие настройки.
     title: str = 'DineTogether'
     version: str = '2.0.0'
-    description: str = 'Сервис бронирования мест в кафе'
+    description: str = ''
     secret_key: str
     algorithm: str = 'HS256'
     access_token_expire_minutes: int = 1440
