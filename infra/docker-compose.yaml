@@ -43,7 +43,7 @@ services:
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 8s
-      timeout: 8s
+      timeout: 7s
       retries: 5
 
   app:
