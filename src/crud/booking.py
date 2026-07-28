@@ -22,7 +22,7 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
 
     _get_statement = select(Booking).options(
         selectinload(Booking.user),
-        selectinload(Booking.cafe),
+        selectinload(Booking.venue),
         selectinload(Booking.tables_slots).selectinload(BookingTableSlot.table),
         selectinload(Booking.tables_slots).selectinload(BookingTableSlot.slot),
     )
@@ -53,7 +53,7 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         """Создает бронирование и связи с выбранными столами и слотами."""
         booking = Booking(
             user_id=user_id,
-            cafe_id=obj_in.cafe_id,
+            venue_id=obj_in.venue_id,
             guest_number=obj_in.guest_number,
             note=obj_in.note,
             booking_date=obj_in.booking_date,

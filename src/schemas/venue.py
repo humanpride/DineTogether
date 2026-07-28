@@ -5,7 +5,7 @@ from pydantic import UUID4, BaseModel, ConfigDict, Field
 from schemas.user import RussianPhone, UserShortInfo
 
 
-class CafeBase(BaseModel):
+class VenueBase(BaseModel):
     """Базовая Pydantic-схема кафе."""
 
     name: str = Field(max_length=255)
@@ -20,13 +20,13 @@ class CafeBase(BaseModel):
     )
 
 
-class CafeCreate(CafeBase):
+class VenueCreate(VenueBase):
     """Схема для создания кафе."""
 
     manager_ids: list[int] = Field(..., min_length=1, description='Список менеджеров кафе')
 
 
-class CafeInfo(CafeBase):
+class VenueInfo(VenueBase):
     """Схема для отображения информации о кафе."""
 
     id: int
@@ -36,13 +36,13 @@ class CafeInfo(CafeBase):
     updated_at: datetime
 
 
-class CafeShortInfo(CafeBase):
+class VenueShortInfo(VenueBase):
     """Схема краткой информации о кафе."""
 
     id: int
 
 
-class CafeUpdate(CafeBase):
+class VenueUpdate(VenueBase):
     """Схема обновления информации о кафе."""
 
     name: str | None = Field(None, min_length=1, max_length=255)

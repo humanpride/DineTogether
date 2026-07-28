@@ -1,8 +1,8 @@
-from datetime import date
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    Date,
+    DateTime,
     Enum,
     ForeignKey,
     Integer,
@@ -15,21 +15,21 @@ from core.base_model import Base
 from core.constants import BookingStatus
 
 if TYPE_CHECKING:
-    from .cafe import Cafe
     from .slot import TimeSlot
     from .table import Table
     from .user import User
+    from .venue import Venue
 
 
 class Booking(Base):
-    """Модель бронирования места в кафе."""
+    """Represent a user's reservation containing selected tables and time slots."""
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False,
     )
-    cafe_id: Mapped[int] = mapped_column(
-        ForeignKey('cafes.id', ondelete='CASCADE'),
+    venue_id: Mapped[int] = mapped_column(
+        ForeignKey('venues.id', ondelete='CASCADE'),
         nullable=False,
     )
     guest_number: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -40,11 +40,10 @@ class Booking(Base):
         server_default=BookingStatus.BOOKING.value,
         nullable=False,
     )
-    booking_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     # relationships
     user: Mapped['User'] = relationship('User', lazy='selectin')
-    cafe: Mapped['Cafe'] = relationship('Cafe', lazy='selectin')
+    venue: Mapped['Venue'] = relationship('Venue', lazy='selectin')
     tables_slots: Mapped[list['BookingTableSlot']] = relationship(
         'BookingTableSlot',
         back_populates='booking',
@@ -54,7 +53,7 @@ class Booking(Base):
 
 
 class BookingTableSlot(Base):
-    """Связь бронирования с выбранными столами и временными слотами."""
+    """Represent a reserved table for a specific booking time slot."""
 
     __tablename__ = 'booking_table_slots'
 
@@ -70,6 +69,8 @@ class BookingTableSlot(Base):
         ForeignKey('timeslots.id', ondelete='CASCADE'),
         nullable=False,
     )
+    booking_start_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    booking_end_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     # relationships
     booking: Mapped['Booking'] = relationship('Booking', back_populates='tables_slots')

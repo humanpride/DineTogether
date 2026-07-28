@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from crud.cafe import cafe_crud
+from core.base_model import get_utc_now
+from crud.venue import venue_crud
 from models.booking import Booking
 from tasks.email import (
     send_booking_created_to_managers,
@@ -14,6 +15,7 @@ from tasks.email import (
 async def handle_booking_created(
     booking: Booking,
     session: AsyncSession,
+    updated: bool = False,
 ) -> None:
     """Отправляет уведомления после создания бронирования."""
     slot = booking.tables_slots[0].slot
@@ -27,19 +29,25 @@ async def handle_booking_created(
         '%d.%m.%Y %H:%M',
     )
 
+    await session.refresh(booking.venue, attribute_names=['managers'])
+
+    # TODO: Сделать логику обновления напоминаний, если изменилось время бронирования
+    if updated:
+        ...
+
     send_booking_created_to_user.delay(
         email=booking.user.email,
         user_name=booking.user.username,
-        cafe_name=booking.cafe.name,
+        venue_name=booking.venue.name,
         booking_time=booking_time,
     )
 
-    await session.refresh(booking.cafe, attribute_names=['managers'])
     send_booking_created_to_managers.delay(
-        cafe_name=booking.cafe.name,
+        venue_name=booking.venue.name,
         user_name=booking.user.username,
+        user_email=booking.user.email,
         booking_time=booking_time,
-        managers_emails=await cafe_crud.get_managers_emails(booking.cafe, session),
+        managers_emails=await venue_crud.get_managers_emails(booking.venue, session),
     )
 
     reminders = [
@@ -52,15 +60,16 @@ async def handle_booking_created(
             'booking_reminder.html',
         ),
     ]
-    for eta, template_name in reminders:
-        if eta > datetime.utcnow():
+    for reminder_time, template_name in reminders:
+        # FIXME: сравниваются offset-naive и offset-aware datetime. Нужно привести к виду.
+        if reminder_time > get_utc_now():
             send_booking_reminder.apply_async(
                 kwargs={
                     'email': booking.user.email,
                     'template_name': template_name,
                     'user_name': booking.user.username,
-                    'cafe_name': booking.cafe.name,
+                    'venue_name': booking.venue.name,
                     'booking_time': booking_time,
                 },
-                eta=eta,
+                eta=reminder_time,
             )

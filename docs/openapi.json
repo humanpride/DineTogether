@@ -468,14 +468,14 @@
         ]
       }
     },
-    "/cafes": {
+    "/venues": {
       "get": {
         "tags": [
           "Кафе"
         ],
         "summary": "Получение списка кафе",
         "description": "Получение списка кафе. Для администраторов и менеджеров - все кафе (с возможностью выбора), для пользователей - только активные.",
-        "operationId": "get_all_cafes_cafes_get",
+        "operationId": "get_all_venues_venues_get",
         "security": [
           {
             "bearerAuth": []
@@ -502,7 +502,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/CafeInfo"
+                    "$ref": "#/components/schemas/VenueInfo"
                   },
                   "title": "Список кафе"
                 }
@@ -537,7 +537,7 @@
         ],
         "summary": "Создание нового кафе",
         "description": "Создает новое кафе. Только для администраторов и менеджеров.",
-        "operationId": "create_cafe_cafes_post",
+        "operationId": "create_venue_venues_post",
         "security": [
           {
             "bearerAuth": []
@@ -548,7 +548,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CafeCreate",
+                "$ref": "#/components/schemas/VenueCreate",
                 "description": "Данные кафе"
               }
             }
@@ -560,7 +560,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CafeInfo"
+                  "$ref": "#/components/schemas/VenueInfo"
                 }
               }
             }
@@ -608,14 +608,14 @@
         }
       }
     },
-    "/cafes/{cafe_id}": {
+    "/venues/{venue_id}": {
       "get": {
         "tags": [
           "Кафе"
         ],
         "summary": "Получение информации о кафе по его ID",
         "description": "Получение информации о кафе по его ID. Для администраторов и менеджеров - все кафе, для пользователей - только активные.",
-        "operationId": "get_cafe_by_id_cafes__cafe_id__get",
+        "operationId": "get_venue_by_id_venues__venue_id__get",
         "security": [
           {
             "bearerAuth": []
@@ -623,12 +623,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           }
@@ -639,7 +639,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CafeInfo"
+                  "$ref": "#/components/schemas/VenueInfo"
                 }
               }
             }
@@ -702,7 +702,7 @@
         ],
         "summary": "Обновление информации о кафе по его ID",
         "description": "Обновление информации о кафе по его ID. Только для администраторов и менеджеров.",
-        "operationId": "path_cafe_by_id_cafes__cafe_id__patch",
+        "operationId": "path_venue_by_id_venues__venue_id__patch",
         "security": [
           {
             "bearerAuth": []
@@ -710,12 +710,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           }
@@ -725,7 +725,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CafeUpdate",
+                "$ref": "#/components/schemas/VenueUpdate",
                 "description": "Обновленные данные кафе"
               }
             }
@@ -737,7 +737,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CafeInfo"
+                  "$ref": "#/components/schemas/VenueInfo"
                 }
               }
             }
@@ -795,14 +795,14 @@
         }
       }
     },
-    "/cafes/{cafe_id}/tables": {
+    "/venues/{venue_id}/tables": {
       "get": {
         "tags": [
           "Столы"
         ],
         "summary": "Список столов в кафе",
         "description": "Получение списка доступных для бронирования столов в кафе. Для администраторов и менеджеров - все столы (с возможностью выбора), для пользователей - только активные.",
-        "operationId": "get_all_tables_cafe__cafe_id__tables_get",
+        "operationId": "get_all_tables_venue__venue_id__tables_get",
         "security": [
           {
             "bearerAuth": []
@@ -810,12 +810,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           },
@@ -884,7 +884,7 @@
         ],
         "summary": "Новый стол в кафе",
         "description": "Создает новое стола кафе. Только для администраторов и менеджеров.",
-        "operationId": "create_table_cafe__cafe_id__tables_post",
+        "operationId": "create_table_venue__venue_id__tables_post",
         "security": [
           {
             "bearerAuth": []
@@ -892,12 +892,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           }
@@ -977,14 +977,14 @@
         }
       }
     },
-    "/cafes/{cafe_id}/tables/{table_id}": {
+    "/venues/{venue_id}/tables/{table_id}": {
       "get": {
         "tags": [
           "Столы"
         ],
         "summary": "Информация о столе в кафе по его ID",
         "description": "Получение информации о столе в кафе по его ID. Для администраторов и менеджеров - все столы, для пользователей - только активные.",
-        "operationId": "get_table_by_id_cafe__cafe_id__tables__table_id__get",
+        "operationId": "get_table_by_id_venue__venue_id__tables__table_id__get",
         "security": [
           {
             "bearerAuth": []
@@ -992,12 +992,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           },
@@ -1081,7 +1081,7 @@
         ],
         "summary": "Обновление информации о столе в кафе по его ID",
         "description": "Обновление информации о столе в кафе по его ID. Только для администраторов и менеджеров.",
-        "operationId": "path_table_by_id_cafe__cafe_id__tables__table_id__patch",
+        "operationId": "path_table_by_id_venue__venue_id__tables__table_id__patch",
         "security": [
           {
             "bearerAuth": []
@@ -1089,12 +1089,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           },
@@ -1185,14 +1185,14 @@
         }
       }
     },
-    "/cafes/{cafe_id}/time_slots": {
+    "/venues/{venue_id}/time_slots": {
       "get": {
         "tags": [
           "Временные слоты"
         ],
         "summary": "Список временных слотов в кафе",
         "description": "Получение списка доступных для бронирования временных слотов в кафе. Для администраторов и менеджеров - все столы (с возможностью выбора), для пользователей - только активные.",
-        "operationId": "get_all_time_slots_cafe__cafe_id__time_slots_get",
+        "operationId": "get_all_time_slots_venue__venue_id__time_slots_get",
         "security": [
           {
             "bearerAuth": []
@@ -1200,12 +1200,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           },
@@ -1274,7 +1274,7 @@
         ],
         "summary": "Новый временной слот в кафе",
         "description": "Создает нового временного слота в кафе. Только для администраторов и менеджеров.",
-        "operationId": "create_time_slot_cafe__cafe_id__time_slots_post",
+        "operationId": "create_time_slot_venue__venue_id__time_slots_post",
         "security": [
           {
             "bearerAuth": []
@@ -1282,12 +1282,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           }
@@ -1367,14 +1367,14 @@
         }
       }
     },
-    "/cafes/{cafe_id}/time_slots/{slot_id}": {
+    "/venues/{venue_id}/time_slots/{slot_id}": {
       "get": {
         "tags": [
           "Временные слоты"
         ],
         "summary": "Информация о временном слоте в кафе по его ID",
         "description": "Получение информации о временном слоте в кафе по его ID. Для администраторов и менеджеров - все столы, для пользователей - только активные.",
-        "operationId": "get_time_slot_by_id_cafe__cafe_id__time_slots__slot_id__get",
+        "operationId": "get_time_slot_by_id_venue__venue_id__time_slots__slot_id__get",
         "security": [
           {
             "bearerAuth": []
@@ -1382,12 +1382,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           },
@@ -1472,7 +1472,7 @@
         ],
         "summary": "Обновление информации о временом слоте в кафе по его ID",
         "description": "Обновление информации о временом слоте в кафе по его ID. Только для администраторов и менеджеров.",
-        "operationId": "path_time_slot_by_id_cafe__cafe_id__time_slots__slot_id__patch",
+        "operationId": "path_time_slot_by_id_venue__venue_id__time_slots__slot_id__patch",
         "security": [
           {
             "bearerAuth": []
@@ -1480,12 +1480,12 @@
         ],
         "parameters": [
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе"
           },
@@ -1602,12 +1602,12 @@
             "description": "Показывать все блюда, только активные или только не активные. <br>По умолчанию показывает: <br><ul><li>для пользователя - только активные блюда (всегда, в не зависимости от значения параметра).</li><li>для администратора - все блюда (и активные и не активные)</li><li>для менеджера - активные блюда </li></ul>"
           },
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе, в котором показывать блюда. Если не задано - показывает все блюда во всех кафе"
           }
@@ -1941,12 +1941,12 @@
             "description": "Показывать все акции, только активные или только не активные. <br>По умолчанию показывает: <br><ul><li>для пользователя - только активные акции (всегда, в не зависимости от значения параметра).</li><li>для администратора - все акции (и активные и не активные)</li><li>для менеджера - активные акции </li></ul>"
           },
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе, в котором показывать акции. Если не задано - показывает все акции во всех кафе"
           }
@@ -2280,12 +2280,12 @@
             "description": "Показывать все бронирования, только активные или только не активные. <br>По умолчанию показывает: <br><ul><li>для пользователя - только активные бронирования (всегда, в не зависимости от значения параметра).</li><li>для администратора - все бронирования (и активные и не активные)</li><li>для менеджера - активные бронирования</li></ul>"
           },
           {
-            "name": "cafe_id",
+            "name": "venue_id",
             "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
-              "title": "Cafe Id"
+              "title": "Venue Id"
             },
             "description": "ID кафе, в котором показывать бронирования. Если не задано - показывает все бронирования во всех кафе"
           },
@@ -2723,12 +2723,12 @@
     "schemas": {
       "ActionCreate": {
         "properties": {
-          "cafes_id": {
+          "venues_id": {
             "items": {
               "type": "integer"
             },
             "type": "array",
-            "title": "Cafes Id"
+            "title": "Venues Id"
           },
           "description": {
             "type": "string",
@@ -2749,7 +2749,7 @@
         },
         "type": "object",
         "required": [
-          "cafes_id",
+          "venues_id",
           "description",
           "photo_id"
         ],
@@ -2761,12 +2761,12 @@
             "type": "integer",
             "title": "Id"
           },
-          "cafes": {
+          "venues": {
             "items": {
-              "$ref": "#/components/schemas/CafeShortInfo"
+              "$ref": "#/components/schemas/VenueShortInfo"
             },
             "type": "array",
-            "title": "Cafes"
+            "title": "Venues"
           },
           "description": {
             "type": "string",
@@ -2804,7 +2804,7 @@
       },
       "ActionUpdate": {
         "properties": {
-          "cafes_id": {
+          "venues_id": {
             "anyOf": [
               {
                 "items": {
@@ -2816,7 +2816,7 @@
                 "type": "null"
               }
             ],
-            "title": "Cafes Id"
+            "title": "Venues Id"
           },
           "description": {
             "anyOf": [
@@ -2938,9 +2938,9 @@
       },
       "BookingCreate": {
         "properties": {
-          "cafe_id": {
+          "venue_id": {
             "type": "integer",
-            "title": "Cafe Id"
+            "title": "Venue Id"
           },
           "tables_slots": {
             "type": "array",
@@ -2972,7 +2972,7 @@
         },
         "type": "object",
         "required": [
-          "cafe_id",
+          "venue_id",
           "tables_slots",
           "guest_number",
           "booking_date"
@@ -2988,8 +2988,8 @@
           "user": {
             "$ref": "#/components/schemas/UserShortInfo"
           },
-          "cafe": {
-            "$ref": "#/components/schemas/CafeShortInfo"
+          "venue": {
+            "$ref": "#/components/schemas/VenueShortInfo"
           },
           "tables_slots": {
             "type": "array",
@@ -3089,7 +3089,7 @@
         "type": "object",
         "title": "BookingUpdate"
       },
-      "CafeCreate": {
+      "VenueCreate": {
         "properties": {
           "name": {
             "type": "string",
@@ -3127,9 +3127,9 @@
           "phone",
           "managers_id"
         ],
-        "title": "CafeCreate"
+        "title": "VenueCreate"
       },
-      "CafeInfo": {
+      "VenueInfo": {
         "properties": {
           "id": {
             "type": "integer",
@@ -3179,9 +3179,9 @@
           }
         },
         "type": "object",
-        "title": "CafeInfo"
+        "title": "VenueInfo"
       },
-      "CafeShortInfo": {
+      "VenueShortInfo": {
         "properties": {
           "id": {
             "type": "integer",
@@ -3210,9 +3210,9 @@
           }
         },
         "type": "object",
-        "title": "CafeShortInfo"
+        "title": "VenueShortInfo"
       },
-      "CafeUpdate": {
+      "VenueUpdate": {
         "properties": {
           "name": {
             "type": "string",
@@ -3248,7 +3248,7 @@
           }
         },
         "type": "object",
-        "title": "CafeUpdate"
+        "title": "VenueUpdate"
       },
       "CustomError": {
         "properties": {
@@ -3287,19 +3287,19 @@
             "type": "number",
             "title": "Price"
           },
-          "cafes_id": {
+          "venues_id": {
             "items": {
               "type": "integer"
             },
             "type": "array",
-            "title": "Cafes Id"
+            "title": "Venues Id"
           }
         },
         "type": "object",
         "required": [
           "name",
           "price",
-          "cafes_id"
+          "venues_id"
         ],
         "title": "DishCreate"
       },
@@ -3326,12 +3326,12 @@
             "type": "number",
             "title": "Price"
           },
-          "cafes": {
+          "venues": {
             "items": {
-              "$ref": "#/components/schemas/CafeShortInfo"
+              "$ref": "#/components/schemas/VenueShortInfo"
             },
             "type": "array",
-            "title": "Cafes"
+            "title": "Venues"
           },
           "is_active": {
             "type": "boolean",
@@ -3370,12 +3370,12 @@
             "type": "number",
             "title": "Price"
           },
-          "cafes_id": {
+          "venues_id": {
             "items": {
               "type": "integer"
             },
             "type": "array",
-            "title": "Cafes Id"
+            "title": "Venues Id"
           },
           "is_active": {
             "type": "boolean",
@@ -3419,8 +3419,8 @@
             "type": "integer",
             "title": "Id"
           },
-          "cafe": {
-            "$ref": "#/components/schemas/CafeShortInfo"
+          "venue": {
+            "$ref": "#/components/schemas/VenueShortInfo"
           },
           "description": {
             "type": "string",
@@ -3514,8 +3514,8 @@
             "type": "integer",
             "title": "Id"
           },
-          "cafe": {
-            "$ref": "#/components/schemas/CafeShortInfo"
+          "venue": {
+            "$ref": "#/components/schemas/VenueShortInfo"
           },
           "start_time": {
             "type": "string",

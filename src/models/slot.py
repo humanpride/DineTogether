@@ -8,36 +8,36 @@ from core.base_model import Base
 from core.constants import SLOT_TIME_FORMAT
 
 if TYPE_CHECKING:
-    from models.cafe import Cafe
+    from models import Venue
 
 
 class TimeSlot(Base):
-    """Модель временного слота для  брони места в кафе."""
+    """Represent an available booking time interval for a venue."""
 
-    cafe_id: Mapped[int] = mapped_column(
+    venue_id: Mapped[int] = mapped_column(
         ForeignKey(
-            'cafes.id',
+            'venues.id',
             ondelete='CASCADE',
         ),
         nullable=False,
-        comment='ID кафе',
+        comment='Venue ID',
     )
     start_time: Mapped[time] = mapped_column(
         Time,
         nullable=False,
-        comment='Время начала слота',
+        comment='Slot start time',
     )
     end_time: Mapped[time] = mapped_column(
         Time,
         nullable=False,
-        comment='Время окончания слота',
+        comment='Slot end time',
     )
     description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
-        comment='Описание слота',
+        comment='Slot descriprion',
     )
-    cafe: Mapped['Cafe'] = relationship(lazy='selectin')
+    venue: Mapped['Venue'] = relationship(lazy='selectin')
 
     __table_args__ = (
         CheckConstraint(
@@ -45,19 +45,19 @@ class TimeSlot(Base):
             name='check_time_order',
         ),
         UniqueConstraint(
-            'cafe_id',
+            'venue_id',
             'start_time',
             'end_time',
-            name='uq_cafe_timeslot',
+            name='uq_venue_timeslot',
         ),
     )
 
     def __repr__(self) -> str:
-        """Возвращает строковое представление экземпляра TimeSlot."""
+        """Return the string representation of the TimeSlot instance."""
         return (
             f'<{self.__class__.__name__}('
             f'id={self.id}, '
-            f'cafe_id={self.cafe_id}, '
+            f'venue_id={self.venue_id}, '
             f'start_time={self.start_time.strftime(SLOT_TIME_FORMAT)}, '
             f'end_time={self.end_time.strftime(SLOT_TIME_FORMAT)})>'
         )

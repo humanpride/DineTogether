@@ -4,10 +4,10 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator, model_validator
 
 from core.constants import BookingStatus
-from schemas.cafe import CafeShortInfo
 from schemas.slot import TimeSlotShortInfo
 from schemas.table import TableShortInfo
 from schemas.user import UserShortInfo
+from schemas.venue import VenueShortInfo
 
 
 class BookingTableSlotSchema(BaseModel):
@@ -33,7 +33,7 @@ class BookingBase(BaseModel):
 class BookingCreate(BookingBase):
     """Схема создания бронирования."""
 
-    cafe_id: PositiveInt
+    venue_id: PositiveInt
 
     @field_validator('booking_date', mode='after')
     @classmethod
@@ -75,7 +75,7 @@ class BookingInfo(BaseModel):
 
     id: int
     user: UserShortInfo
-    cafe: CafeShortInfo
+    venue: VenueShortInfo
     tables_slots: list[BookingTableSlotShortInfo]
     guest_number: PositiveInt
     note: str | None

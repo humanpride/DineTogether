@@ -7,26 +7,26 @@ from core.constants import UserRole
 from core.dependencies import CurrentUserDep, SessionDep
 from core.logging import log
 from core.validators import (
-    validate_cafe_managers,
     validate_current_manager_or_admin,
-    validate_existed_cafe,
+    validate_existed_venue,
+    validate_venue_managers,
 )
-from crud.cafe import cafe_crud
-from schemas.cafe import CafeCreate, CafeInfo, CafeUpdate
+from crud.venue import venue_crud
+from schemas.venue import VenueCreate, VenueInfo, VenueUpdate
 
-router = APIRouter(prefix='/cafes')
+router = APIRouter(prefix='/venues')
 
 
 @router.get(
     '/',
-    response_model=list[CafeInfo],
+    response_model=list[VenueInfo],
     response_model_exclude_none=True,
 )
-async def get_all_cafe(
+async def get_all_venue(
     session: SessionDep,
     user: CurrentUserDep,
     show_active: bool | None = None,
-) -> Sequence[CafeInfo]:
+) -> Sequence[VenueInfo]:
     """Получение списка кафе.
 
     - для администраторов и менеджеров - все кафе
@@ -39,27 +39,27 @@ async def get_all_cafe(
     """
     if user.role == UserRole.USER:
         show_active = True
-    return await cafe_crud.get_all(is_active=show_active, session=session)
+    return await venue_crud.get_all(is_active=show_active, session=session)
 
 
 @router.post(
     '/',
-    response_model=CafeInfo,
+    response_model=VenueInfo,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_cafe(
-    cafe_in: CafeCreate,
+async def create_venue(
+    venue_in: VenueCreate,
     session: SessionDep,
     user: CurrentUserDep,
-) -> CafeInfo:
+) -> VenueInfo:
     """Создает новое кафе.
 
     Только для администраторов и менеджеров.
     """
     current_user = validate_current_manager_or_admin(user)
     try:
-        await validate_cafe_managers(
-            manager_ids=cafe_in.manager_ids,
+        await validate_venue_managers(
+            manager_ids=venue_in.manager_ids,
             session=session,
         )
     except ValueError as error:
@@ -69,9 +69,9 @@ async def create_cafe(
             detail='Некорректный список менеджеров',
         )
     try:
-        cafe = await cafe_crud.create(obj_in=cafe_in, session=session)
+        venue = await venue_crud.create(obj_in=venue_in, session=session)
         await session.commit()
-        return cafe
+        return venue
     except Exception as error:
         log(logging.ERROR, str(error), current_user)
         await session.rollback()
@@ -83,15 +83,15 @@ async def create_cafe(
 
 
 @router.get(
-    '/{cafe_id}',
-    response_model=CafeInfo,
+    '/{venue_id}',
+    response_model=VenueInfo,
 )
-async def get_cafe(
-    cafe_id: int,
+async def get_venue(
+    venue_id: int,
     session: SessionDep,
     user: CurrentUserDep,
     show_active: bool | None = None,
-) -> CafeInfo:
+) -> VenueInfo:
     """Получение информации о кафе по его ID.
 
     - для администраторов и менеджеров - загружается любое кафе
@@ -102,42 +102,42 @@ async def get_cafe(
         False -> Только неактивные кафе
         None -> Все кафе
     """
-    cafe = await cafe_crud.get(cafe_id, session)
+    venue = await venue_crud.get(venue_id, session)
     if (
-        not cafe
-        or (show_active is not None and cafe.is_active != show_active)
-        or (user.role == UserRole.USER and not cafe.is_active)
+        not venue
+        or (show_active is not None and venue.is_active != show_active)
+        or (user.role == UserRole.USER and not venue.is_active)
     ):
-        log(logging.INFO, f'Cafe[id={cafe_id}, is_active={show_active}] не найдено', actor=user)
+        log(logging.INFO, f'Venue[id={venue_id}, is_active={show_active}] не найдено', actor=user)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Кафе не найдено.',
         )
-    return cafe
+    return venue
 
 
 @router.patch(
-    '/{cafe_id}',
-    response_model=CafeInfo,
+    '/{venue_id}',
+    response_model=VenueInfo,
 )
-async def update_cafe(
-    cafe_id: int,
-    cafe_in: CafeUpdate,
+async def update_venue(
+    venue_id: int,
+    venue_in: VenueUpdate,
     session: SessionDep,
     user: CurrentUserDep,
-) -> CafeInfo:
+) -> VenueInfo:
     """Обновление информации о кафе по его ID.
 
     Только для администраторов и менеджеров.
     """
     validate_current_manager_or_admin(user)
-    cafe = await validate_existed_cafe(cafe_id, session)
-    if cafe_in.manager_ids is not None:
+    venue = await validate_existed_venue(venue_id, session)
+    if venue_in.manager_ids is not None:
         try:
-            await validate_cafe_managers(
-                manager_ids=cafe_in.manager_ids,
+            await validate_venue_managers(
+                manager_ids=venue_in.manager_ids,
                 session=session,
-                cafe=cafe,
+                venue=venue,
             )
         except ValueError as error:
             log(logging.INFO, str(error), user)
@@ -145,7 +145,7 @@ async def update_cafe(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail='Некорректный список менеджеров',
             )
-    updated_cafe = await cafe_crud.update(db_obj=cafe, obj_in=cafe_in, session=session)
+    updated_venue = await venue_crud.update(db_obj=venue, obj_in=venue_in, session=session)
     await session.commit()
 
-    return updated_cafe
+    return updated_venue

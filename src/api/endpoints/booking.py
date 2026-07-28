@@ -9,7 +9,7 @@ from core.validators import (
     validate_booking_conflicts,
     validate_booking_date,
     validate_booking_references,
-    validate_existed_cafe,
+    validate_existed_venue,
 )
 from crud.booking import booking_crud
 from schemas.booking import BookingCreate, BookingInfo, BookingUpdate
@@ -26,14 +26,14 @@ router = APIRouter(prefix='/booking')
 async def get_all_bookings(
     session: SessionDep,
     show_active: bool | None = True,
-    cafe_id: int | None = None,
+    venue_id: int | None = None,
     user_id: int | None = None,
 ) -> Sequence[BookingInfo]:
     """Возвращает список бронирований с доступными фильтрами."""
     return await booking_crud.get_all(
         session=session,
         is_active=show_active,
-        cafe_id=cafe_id,
+        venue_id=venue_id,
         user_id=user_id,
     )
 
@@ -51,11 +51,11 @@ async def create_booking(
 ) -> BookingInfo:
     """Создает новое бронирование."""
     try:
-        await validate_existed_cafe(booking_in.cafe_id, session)
+        await validate_existed_venue(booking_in.venue_id, session)
         await validate_booking_references(
             booking_in=booking_in,
             session=session,
-            cafe_id=booking_in.cafe_id,
+            venue_id=booking_in.venue_id,
         )
         await validate_booking_conflicts(
             booking_in=booking_in,
@@ -73,7 +73,7 @@ async def create_booking(
         session=session,
     )
     await session.commit()
-    await session.refresh(booking, attribute_names=['cafe', 'tables_slots', 'user'])
+    await session.refresh(booking, attribute_names=['venue', 'tables_slots', 'user'])
     await handle_booking_created(booking, session)
 
     return booking
@@ -119,7 +119,7 @@ async def update_booking(
         await validate_booking_references(
             booking_in=booking_in,
             session=session,
-            cafe_id=booking.cafe_id,
+            venue_id=booking.venue_id,
         )
         await validate_booking_conflicts(
             booking_in=booking_in,

@@ -3,7 +3,7 @@ from typing import Any, Sequence
 from fastapi import APIRouter, HTTPException, status
 
 from core.dependencies import CurrentUserDep, SessionDep
-from core.validators import validate_cafe_ids, validate_current_manager_or_admin
+from core.validators import validate_current_manager_or_admin, validate_venue_ids
 from crud.dish import dish_crud
 from schemas.dish import DishCreate, DishInfo, DishUpdate
 
@@ -15,7 +15,7 @@ async def get_all_dishes(
     session: SessionDep,
     user: CurrentUserDep,
     show_active: bool | None = None,
-    cafe_id: int | None = None,
+    venue_id: int | None = None,
 ) -> Sequence[DishInfo]:
     """Получение списка блюд."""
     filters: dict[str, Any] = dict()
@@ -24,8 +24,8 @@ async def get_all_dishes(
     else:
         filters['is_active'] = show_active
 
-    if cafe_id:
-        filters['cafe_id'] = cafe_id
+    if venue_id:
+        filters['venue_id'] = venue_id
 
     return await dish_crud.get_all(session=session, **filters)
 
@@ -38,11 +38,11 @@ async def create_dish(
 ) -> DishInfo:
     """Создание нового блюда. Только для администраторов и менеджеров."""
     validate_current_manager_or_admin(user)
-    await validate_cafe_ids(dish_in.cafes_id, session)
+    await validate_venue_ids(dish_in.venues_id, session)
 
     new_dish = await dish_crud.create(dish_in, session)
     await session.commit()
-    await session.refresh(new_dish, attribute_names=['cafes'])
+    await session.refresh(new_dish, attribute_names=['venues'])
 
     return new_dish
 
@@ -82,6 +82,6 @@ async def update_dish(
 
     updated_dish = await dish_crud.update(dish, dish_in, session)
     await session.commit()
-    await session.refresh(update_dish, attribute_names=['cafes'])
+    await session.refresh(update_dish, attribute_names=['venues'])
 
     return updated_dish

@@ -6,10 +6,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.base_model import Base
 
 if TYPE_CHECKING:
-    from .cafe import Cafe
+    from .venue import Venue
 
-dish_cafe_association = Table(
-    'dish_cafe_association',
+dish_venue_association = Table(
+    'dish_venue_association',
     Base.metadata,
     Column(
         'dish_id',
@@ -17,15 +17,15 @@ dish_cafe_association = Table(
         primary_key=True,
     ),
     Column(
-        'cafe_id',
-        ForeignKey('cafes.id', ondelete='CASCADE'),
+        'venue_id',
+        ForeignKey('venues.id', ondelete='CASCADE'),
         primary_key=True,
     ),
 )
 
 
 class Dish(Base):
-    """Модель блюда в меню."""
+    """Represent a menu item that can be offered by multiple venues."""
 
     __tablename__ = 'dishes'
 
@@ -39,8 +39,8 @@ class Dish(Base):
         nullable=True,
     )
 
-    cafes: Mapped[list['Cafe'] | None] = relationship(
-        secondary=dish_cafe_association,
+    venues: Mapped[list['Venue'] | None] = relationship(
+        secondary=dish_venue_association,
         back_populates='dishes',
         lazy='raise',
     )

@@ -4,7 +4,7 @@ from typing import Annotated, Self
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, model_validator
 
 from core.constants import SLOT_TIME_FORMAT
-from schemas.cafe import CafeShortInfo
+from schemas.venue import VenueShortInfo
 
 StartTime = Annotated[
     time,
@@ -84,7 +84,7 @@ class TimeSlotShortInfo(TimeSlotBase):
 class TimeSlotInfo(TimeSlotShortInfo):
     """Схема полной информации о слоте."""
 
-    cafe: CafeShortInfo = Field(
+    venue: VenueShortInfo = Field(
         ...,
         description='Информация о кафе бронирования',
     )

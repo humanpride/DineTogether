@@ -1,13 +1,13 @@
 name: DineTogether
 
 networks:
-  cafe-network:
+  venue-network:
 
 services:
   db:
     image: postgres:17-alpine
     networks:
-      - cafe-network
+      - venue-network
     env_file:
       - ./.env
     environment:
@@ -33,7 +33,7 @@ services:
     image: rabbitmq:3-management
     hostname: rabbitmq
     networks:
-      - cafe-network
+      - venue-network
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -49,7 +49,7 @@ services:
   app:
     build: ../
     networks:
-      - cafe-network
+      - venue-network
     env_file:
       - ./.env
     ports:
@@ -67,7 +67,7 @@ services:
   nginx:
     image: nginx:alpine
     networks:
-      - cafe-network
+      - venue-network
     ports:
       - "888:80"
     volumes:
@@ -78,7 +78,7 @@ services:
   maildev:
     image: maildev/maildev
     networks:
-      - cafe-network
+      - venue-network
     environment:
       - TZ=Europe/Moscow
     ports:

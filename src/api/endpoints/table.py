@@ -8,12 +8,12 @@ from core.dependencies import CurrentUserDep, SessionDep
 from core.logging import log
 from core.validators import (
     validate_current_manager_or_admin,
-    validate_existed_cafe,
+    validate_existed_venue,
 )
 from crud.table import table_crud
 from schemas.table import TableCreate, TableInfo, TableUpdate
 
-router = APIRouter(prefix='/cafes/{cafe_id}/tables')
+router = APIRouter(prefix='/venues/{venue_id}/tables')
 
 
 @router.get(
@@ -22,7 +22,7 @@ router = APIRouter(prefix='/cafes/{cafe_id}/tables')
     response_model_exclude_none=True,
 )
 async def get_all_tables(
-    cafe_id: int,
+    venue_id: int,
     session: SessionDep,
     user: CurrentUserDep,
     show_active: bool | None = None,
@@ -39,12 +39,12 @@ async def get_all_tables(
     - False - Только неактивные столы
     - None - Все столы в кафе
     """
-    cafe = await validate_existed_cafe(cafe_id, session)
+    venue = await validate_existed_venue(venue_id, session)
     if user.role == UserRole.USER:
         show_active = True
     return await table_crud.get_all(
         session=session,
-        cafe_id=cafe.id,
+        venue_id=venue.id,
         is_active=show_active,
     )
 
@@ -55,7 +55,7 @@ async def get_all_tables(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_new_table(
-    cafe_id: int,
+    venue_id: int,
     table_in: TableCreate,
     session: SessionDep,
     user: CurrentUserDep,
@@ -65,15 +65,15 @@ async def create_new_table(
     Только для администраторов и менеджеров.
     """
     validate_current_manager_or_admin(user)
-    cafe = await validate_existed_cafe(cafe_id, session)
+    venue = await validate_existed_venue(venue_id, session)
     table_data = table_in.model_dump()
-    table_data['cafe_id'] = cafe.id
+    table_data['venue_id'] = venue.id
     new_table = await table_crud.create(
         obj_in=table_data,
         session=session,
     )
     await session.commit()
-    await session.refresh(new_table, attribute_names=['cafe'])
+    await session.refresh(new_table, attribute_names=['venue'])
 
     return new_table
 
@@ -83,7 +83,7 @@ async def create_new_table(
     response_model=TableInfo,
 )
 async def get_table(
-    cafe_id: int,
+    venue_id: int,
     table_id: int,
     session: SessionDep,
     user: CurrentUserDep,
@@ -98,7 +98,7 @@ async def get_table(
     - False - Только неактивные столы
     - None - Все столы в кафе (и активные и не активные)
     """
-    cafe = await validate_existed_cafe(cafe_id, session)
+    venue = await validate_existed_venue(venue_id, session)
 
     if user.role == UserRole.USER:
         show_active = True
@@ -106,7 +106,7 @@ async def get_table(
     table = await table_crud.get_one_or_none(
         session=session,
         id=table_id,
-        cafe_id=cafe.id,
+        venue_id=venue.id,
         is_active=show_active,
     )
 
@@ -123,7 +123,7 @@ async def get_table(
     response_model=TableInfo,
 )
 async def update_table(
-    cafe_id: int,
+    venue_id: int,
     table_id: int,
     table_in: TableUpdate,
     session: SessionDep,
@@ -134,14 +134,14 @@ async def update_table(
     Доступ: `ADMIN`/`MANAGER`
     """
     validate_current_manager_or_admin(user)
-    cafe = await validate_existed_cafe(cafe_id, session)
+    venue = await validate_existed_venue(venue_id, session)
     table = await table_crud.get_one_or_none(
         session=session,
         id=table_id,
-        cafe_id=cafe.id,
+        venue_id=venue.id,
     )
     if table is None:
-        log(logging.INFO, f'Стол с id={table_id} не найден или не принадлежит кафе {cafe.id}', actor=user)
+        log(logging.INFO, f'Стол с id={table_id} не найден или не принадлежит кафе {venue.id}', actor=user)
         raise HTTPException(
             status_code=404,
             detail='Стол не найден',

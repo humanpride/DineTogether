@@ -8,7 +8,7 @@ tags_metadata = [
         'description': 'Управление пользователями',
     },
     {
-        'name': 'Кафе',
+        'name': 'Venue',
         'description': 'Управление кафе',
     },
     {

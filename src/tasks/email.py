@@ -2,6 +2,7 @@ import asyncio
 
 from celery import shared_task
 
+from models import User
 from services.mail.notification_service import (
     notification_service,
 )
@@ -11,7 +12,7 @@ from services.mail.notification_service import (
 def send_booking_created_to_user(
     email: str,
     user_name: str,
-    cafe_name: str,
+    venue_name: str,
     booking_time: str,
 ) -> None:
     """Уведомление пользователя о создании бронирования."""
@@ -21,7 +22,7 @@ def send_booking_created_to_user(
             subject='Бронирование успешно создано',
             template_name='booking_created.html',
             user_name=user_name,
-            cafe_name=cafe_name,
+            venue_name=venue_name,
             booking_time=booking_time,
         ),
     )
@@ -29,8 +30,9 @@ def send_booking_created_to_user(
 
 @shared_task
 def send_booking_created_to_managers(
-    cafe_name: int,
+    venue_name: int,
     user_name: str,
+    user_email: str,
     booking_time: str,
     managers_emails: list[str],
 ) -> None:
@@ -42,7 +44,8 @@ def send_booking_created_to_managers(
                 subject='Новое бронирование',
                 template_name='admin_notification.html',
                 user_name=user_name,
-                cafe_name=cafe_name,
+                user_email=user_email,
+                venue_name=venue_name,
                 booking_time=booking_time,
             ),
         )
@@ -51,8 +54,8 @@ def send_booking_created_to_managers(
 @shared_task
 def send_booking_updated_to_managers(
     manager_emails: list[str],
-    user_name: str,
-    cafe_name: str,
+    user: User,
+    venue_name: str,
     booking_time: str,
 ) -> None:
     """Уведомление менеджеров об изменении бронирования."""
@@ -62,8 +65,9 @@ def send_booking_updated_to_managers(
                 recipient=manager_email,
                 subject='Бронирование изменено',
                 template_name='booking_updated.html',
-                user_name=user_name,
-                cafe_name=cafe_name,
+                user_name=user.name,
+                user_email=user.email,
+                venue_name=venue_name,
                 booking_time=booking_time,
             ),
         )
@@ -74,17 +78,17 @@ def send_booking_reminder(
     email: str,
     template_name: str,
     user_name: str,
-    cafe_name: str,
+    venue_name: str,
     booking_time: str,
-) -> str:
-    """Напоминание о бронирование (за час до бронирования)."""
+) -> None:
+    """Напоминание о бронирование."""
     asyncio.run(
         notification_service.send_notification(
             recipient=email,
             subject='Напоминание о бронировании',
             template_name=template_name,
             user_name=user_name,
-            cafe_name=cafe_name,
+            venue_name=venue_name,
             booking_time=booking_time,
         ),
     )

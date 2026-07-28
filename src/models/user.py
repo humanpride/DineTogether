@@ -7,11 +7,11 @@ from core.base_model import Base
 from core.constants import UserRole
 
 if TYPE_CHECKING:
-    from models import Cafe
+    from models import Venue
 
 
 class User(Base):
-    """Модель пользователя."""
+    """Represent a user account with access roles and venue association."""
 
     email: Mapped[str | None] = mapped_column(
         String(255),
@@ -43,8 +43,8 @@ class User(Base):
         default=UserRole.USER,
         nullable=False,
     )
-    cafe_id: Mapped[int | None] = mapped_column(
-        ForeignKey('cafes.id'),
+    venue_id: Mapped[int | None] = mapped_column(
+        ForeignKey('venues.id'),
         nullable=True,
     )
-    cafe: Mapped['Cafe | None'] = relationship(back_populates='managers')
+    venue: Mapped['Venue | None'] = relationship(back_populates='managers')
