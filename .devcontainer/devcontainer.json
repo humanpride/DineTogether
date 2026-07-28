@@ -19,7 +19,8 @@
         "42Crunch.vscode-openapi",
         "ms-ossdata.vscode-pgsql",
         "Gruntfuggly.todo-tree",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        "njpwerner.autodocstring"
       ],
       "settings": {
         "[python]": {
@@ -44,7 +45,7 @@
     "PYTHON_VERSION": "3.12",
     "UV_INIT_BARE": "false"
   },
-  "postCreateCommand": "git config --global --add safe.directory /workspace && make post-create",
+  "postCreateCommand": "echo 'POST CREATE STARTED' && git config --global --add safe.directory /workspace && git config --list --show-origin | grep safe.directory && make post-create",
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ]
