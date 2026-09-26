@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # Общие настройки.
     title: str = 'DineTogether'
-    version: str = '2.0.0'
+    version: str = '2.1.0'
     description: str = ''
     secret_key: str
     algorithm: str = 'HS256'
