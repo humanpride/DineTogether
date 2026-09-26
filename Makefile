@@ -1,7 +1,7 @@
 .PHONY: post-create init sync lint format freeze
 
 # Post-create command: run tool verification, init project, and sync dependencies
-post-create: init sync
+post-create: init sync migrate
 
 # Initialize Python environment with uv and create pyproject.toml if needed
 init:
@@ -22,9 +22,11 @@ sync:
 	@echo "Syncing dependencies..."
 	@uv sync > /tmp/uv-sync.log 2>&1
 	@echo "✓ Dependency sync complete (log: /tmp/uv-sync.log)"
-	@echo "Install pre-commit..."
-	@uv run pre-commit install > /tmp/pre-commit-install.log 2>&1
-	@echo "✓ Pre-commit install complete (log: /tmp/pre-commit-install.log)"
+
+migrate:
+	@echo "Applying database migrations..."
+	@cd src && uv run alembic upgrade head
+	@echo "✓ Database migrations applied"
 
 # Run ruff linter
 lint:
