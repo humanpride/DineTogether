@@ -6,5 +6,7 @@ from schemas.dish import DishCreate, DishUpdate
 class CRUDDish(CRUDBase[Dish, DishCreate, DishUpdate]):
     """CRUD-класс для работы с моделью Dish."""
 
+    # TODO: need implementation
+
 
 dish_crud = CRUDDish(Dish)
