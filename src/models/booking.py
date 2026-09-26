@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    Date,
     DateTime,
     Enum,
     ForeignKey,
@@ -32,6 +33,7 @@ class Booking(Base):
         ForeignKey('venues.id', ondelete='CASCADE'),
         nullable=False,
     )
+    booking_date: Mapped[date] = mapped_column(Date, nullable=False)
     guest_number: Mapped[int] = mapped_column(Integer, nullable=False)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[BookingStatus] = mapped_column(
