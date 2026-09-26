@@ -14,6 +14,6 @@ celery --app core.celery_app worker --pool threads --loglevel INFO &
 celery --app core.celery_app flower \
   --port=5555 \
   --url-prefix=flower \
-  --broker-api=http://$RABBIT_USER:$RABBIT_USER_PASS@rabbitmq:15672/api/ &
+  --broker-api=http://$RABBITMQ_DEFAULT_USER:$RABBITMQ_DEFAULT_PASS@rabbitmq:15672/api/ &
 
 exec uvicorn main:app --host 0.0.0.0 --port 8000

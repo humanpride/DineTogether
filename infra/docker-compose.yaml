@@ -23,7 +23,7 @@ services:
                -c wal_buffers=16MB
                -c default_statistics_target=100
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 6s
       timeout: 5s
       retries: 5
@@ -34,12 +34,11 @@ services:
     hostname: rabbitmq
     networks:
       - venue-network
+    env_file:
+      - ../infra/.env
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: $RABBIT_USER
-      RABBITMQ_DEFAULT_PASS: $RABBIT_USER_PASS
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 8s
@@ -80,7 +79,7 @@ services:
     networks:
       - venue-network
     environment:
-      - TZ=Europe/Moscow
+      - TZ=Asia/Yerevan
     ports:
       - "1080:1080"
       - "1025:1025"
