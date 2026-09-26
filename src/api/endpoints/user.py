@@ -29,25 +29,27 @@ router = APIRouter(prefix='/users')
 @router.get(
     '/me',
     response_model=UserShortInfo,
+    summary="Retrieve current user's data",
 )
 async def get_user_me(
     current_user: CurrentUserDep,
 ) -> UserShortInfo:
-    """Получение данных о текущем пользователе."""
+    """Retrieve data about the current user."""
     return current_user
 
 
 @router.patch(
     '/me',
     response_model=UserShortInfo,
+    summary="Update current user's data",
 )
 async def patch_user_me(
     current_user: CurrentUserDep,
     user_data: UserUpdateMe,
     session: SessionDep,
 ) -> UserShortInfo:
-    """Обновление данных о текущем пользователе."""
-    # Проверка уникальности каждого поля отдельно
+    """Update current user data."""
+    # Checking the uniqueness of each field
     if user_data.username:
         await validate_unique_username(
             session=session,
@@ -91,19 +93,19 @@ async def get_users(
     user: CurrentUserDep,
     show_active: bool | None = Query(
         default=None,
-        description='Выводить пользователей по аргументу is_active',
+        description='Retrieve users based on the `is_active` argument.',
     ),
 ) -> Sequence[UserShortInfo]:
-    """Возвращает данные о всех пользователях.
+    """Return data about all users.
 
     show_active:
-        Фильтр по признаку активности пользователя
+        Filter by user activity status
 
-    - True - показывать только активных
-    - False - показывать только неактивных
-    - None - показывать всех
+    - True - show only active ones
+    - False - show only inactive ones
+    - None - show all
 
-    Доступ: `ADMIN`/`MANAGER`
+    Access: `ADMIN`/`MANAGER`
 
     """
     validate_current_manager_or_admin(user)
@@ -114,19 +116,20 @@ async def get_users(
     '/',
     response_model=UserInfo,
     status_code=status.HTTP_201_CREATED,
+    summary='User registration by admin or manager',
 )
 async def register_user_by_admin_or_manager(
     user: CurrentUserDep,
     user_data: UserCreate,
     session: SessionDep,
 ) -> UserInfo:
-    """Регистрация нового пользователя."""
+    """Create new user."""
     current_user = validate_current_manager_or_admin(user)
-    # Проверка для MANAGER: может создавать только USER
+    # Check for MANAGER: can only create USER
     if current_user.role == UserRole.MANAGER and user_data.role != UserRole.USER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Менеджер может создавать только пользователей.',
+            detail='A manager can only create users.',
         )
 
     await validate_unique_username(
@@ -152,11 +155,11 @@ async def register_user_by_admin_or_manager(
             user_id=None,
         )
 
-    # проверка на наличие хотя бы одного контактного поля (email или телефон)
+    # check for the presence of at least one contact field (email or phone)
     if not user_data.email and not user_data.phone:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Должен быть указан email или телефон',
+            detail='An email address or phone number must be provided.',
         )
 
     new_user = await user_crud.create_user(
@@ -183,15 +186,15 @@ async def get_user_by_id(
     current_user: CurrentUserDep,
     session: SessionDep,
 ) -> UserInfo | UserShortInfo:
-    """Получение пользователя по id."""
+    """Get a user by ID."""
     validate_current_manager_or_admin(current_user)
     user = await user_crud.get(obj_id=user_id, session=session)
 
     if not user:
-        log(logging.INFO, f'Пользователь с id={user_id} не найден', actor=current_user)
+        log(logging.INFO, f'User with id={user_id} not found', actor=current_user)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Пользователь не найден',
+            detail='User not found',
         )
 
     if current_user.role == UserRole.ADMIN:
@@ -209,47 +212,47 @@ async def update_user_by_id(
     current_user: CurrentUserDep,
     session: SessionDep,
 ) -> UserInfo:
-    """Обновление пользователя по id.
+    """Update user by ID.
 
-    Доступ: `ADMIN`/`MANAGER`
+    Access: `ADMIN`/`MANAGER`
     """
     validate_current_manager_or_admin(current_user)
     user_to_update = await user_crud.get(obj_id=user_id, session=session)
 
     if not user_to_update:
-        log(logging.INFO, f'Пользователь с id={user_id} не найден', actor=current_user)
+        log(logging.INFO, f'User with id={user_id} not found', actor=current_user)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Пользователь не найден',
+            detail='User not found',
         )
 
-    # ограничения для менеджера
+    # restrictions for the manager
     if current_user.role == UserRole.MANAGER and (
         user_to_update.role != UserRole.USER or any([user_data.role, user_data.is_active])
     ):
         log(
             logging.INFO,
-            f'У пользователя {current_user.username} недостаточно прав для изменения '
-            f'пользователя {user_to_update.username} с данными: {user_data.model_dump()}',
+            f'User {current_user.username} does not have sufficient permissions to modify '
+            f'the user {user_to_update.username} with data: {user_data.model_dump()}',
             actor=current_user,
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Недостаточно прав для изменения этих данных',
+            detail='Insufficient permissions to modify this data.',
         )
 
-    # Проверка: запрещаем смену роли у другого администратора
+    # Check: prevent changing another administrator's role
     if user_data.role is not None and user_to_update.role == UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Нельзя изменить роль администратора',
+            detail='The administrator role cannot be changed.',
         )
 
-    # Проверка: нельзя деактивировать самого себя
+    # Check: cannot deactivate oneself
     if user_data.is_active is False and user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Нельзя деактивировать самого себя',
+            detail='You cannot deactivate yourself.',
         )
 
     if user_data.username:
@@ -295,31 +298,31 @@ async def deactivate_user_by_id(
     current_user: CurrentUserDep,
     session: SessionDep,
 ) -> UserInfo:
-    """Деактивирует пользователя. Только для ADMIN."""
+    """Deactivate user. For ADMIN only."""
     validate_current_admin(current_user)
-    # Нельзя деактивировать себя
+    # cannot deactivate yourself
     if current_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Нельзя деактивировать самого себя',
+            detail='You cannot deactivate yourself.',
         )
 
-    # Получаем пользователя для деактивации
+    # Retrieve the user for deactivation.
     user_to_deactivate = await user_crud.get(obj_id=user_id, session=session)
 
     if not user_to_deactivate:
-        log(logging.INFO, f'Пользователь с id={user_id} не найден', actor=current_user)
+        log(logging.INFO, f'User with id={user_id} not found', actor=current_user)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Пользователь не найден',
+            detail='User not found',
         )
 
-    # Если уже деактивирован
+    # if the user is already deactivated
     if not user_to_deactivate.is_active:
-        log(logging.INFO, f'Пользователь с id={user_id} уже деактивирован', actor=current_user)
+        log(logging.INFO, f'The user with id={user_id} is already deactivated.', actor=current_user)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Пользователь уже деактивирован',
+            detail='The user has already been deactivated.',
         )
 
     updated_user = await user_crud.update(
@@ -341,23 +344,23 @@ async def activate_user_by_id(
     session: SessionDep,
     current_user: CurrentUserDep,
 ) -> UserInfo:
-    """Активирует пользователя. Только для ADMIN."""
+    """Activate user. For ADMIN only."""
     validate_current_admin(current_user)
     user_to_activate = await user_crud.get(obj_id=user_id, session=session)
 
     if not user_to_activate:
-        log(logging.INFO, f'Пользователь с id={user_id} не найден', actor=current_user)
+        log(logging.INFO, f'User with id={user_id} not found', actor=current_user)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Пользователь не найден',
+            detail='User not found',
         )
 
-    # Если уже активирован
+    # If the user is already activated
     if user_to_activate.is_active:
-        log(logging.INFO, f'Пользователь с id={user_id} уже активирован', actor=current_user)
+        log(logging.INFO, f'The user with id={user_id} is already activated.', actor=current_user)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Пользователь уже активирован',
+            detail='The user is already activated.',
         )
 
     updated_user = await user_crud.update(

@@ -27,17 +27,17 @@ async def get_all_tables(
     user: CurrentUserDep,
     show_active: bool | None = None,
 ) -> Sequence[TableInfo]:
-    """Возвращает список столов в кафе.
+    """Return a list of tables in the venue.
 
-    По умолчанию показывает:
-    - для пользователя - только активные столы в кафе (всегда, вне зависимости от значения параметра)
-    - для администратора - все столы в кафе (и активные и не активные)
-    - для менеджера - активные столы в кафе
+    By default:
+    - for users - only active tables in the venue (always, regardless of the parameter value)
+    - for administrators - all tables in the venue (both active and inactive)
+    - for managers - active tables in the venue
 
-    show_active:
-    - True - Только активные столы
-    - False - Только неактивные столы
-    - None - Все столы в кафе
+    **show_active:**
+    - True - Active tables only
+    - False - Inactive tables only
+    - None - All tables in the venue
     """
     venue = await validate_existed_venue(venue_id, session)
     if user.role == UserRole.USER:
@@ -60,9 +60,9 @@ async def create_new_table(
     session: SessionDep,
     user: CurrentUserDep,
 ) -> TableInfo:
-    """Создает новый стол в кафе.
+    """Create a new table in the venue.
 
-    Только для администраторов и менеджеров.
+    Only for administrators and managers.
     """
     validate_current_manager_or_admin(user)
     venue = await validate_existed_venue(venue_id, session)
@@ -89,14 +89,14 @@ async def get_table(
     user: CurrentUserDep,
     show_active: bool | None = None,
 ) -> TableInfo:
-    """Получение информации о столе в кафе по его ID.
+    """Get information about a table in the venue by its ID.
 
-    Для администраторов и менеджеров - все столы, для пользователей - только активные.
+    For administrators and managers - all tables, for users - active tables only.
 
-    show_active:
-    - True - Только активные столы
-    - False - Только неактивные столы
-    - None - Все столы в кафе (и активные и не активные)
+    **show_active:**
+    - True - Active tables only
+    - False - Inactive tables only
+    - None - All tables in the venue (both active and inactive)
     """
     venue = await validate_existed_venue(venue_id, session)
 
@@ -113,7 +113,7 @@ async def get_table(
     if table is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Стол не найден',
+            detail='Table not found',
         )
     return table
 
@@ -129,9 +129,9 @@ async def update_table(
     session: SessionDep,
     user: CurrentUserDep,
 ) -> TableInfo:
-    """Обновление информации о столе в кафе по его ID.
+    """Update information about a table in the venue by its ID.
 
-    Доступ: `ADMIN`/`MANAGER`
+    Access: `ADMIN`/`MANAGER`
     """
     validate_current_manager_or_admin(user)
     venue = await validate_existed_venue(venue_id, session)
@@ -141,10 +141,14 @@ async def update_table(
         venue_id=venue.id,
     )
     if table is None:
-        log(logging.INFO, f'Стол с id={table_id} не найден или не принадлежит кафе {venue.id}', actor=user)
+        log(
+            logging.INFO,
+            f'Table with id={table_id} not found or does not belong to venue {venue.id}',
+            actor=user,
+        )
         raise HTTPException(
             status_code=404,
-            detail='Стол не найден',
+            detail='Table not found',
         )
     updated_table = await table_crud.update(
         db_obj=table,

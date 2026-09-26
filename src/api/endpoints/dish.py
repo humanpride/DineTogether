@@ -17,7 +17,7 @@ async def get_all_dishes(
     show_active: bool | None = None,
     venue_id: int | None = None,
 ) -> Sequence[DishInfo]:
-    """Получение списка блюд."""
+    """Get a list of dishes."""
     filters: dict[str, Any] = dict()
     if user.role == 'USER':
         filters['is_active'] = True
@@ -36,7 +36,7 @@ async def create_dish(
     session: SessionDep,
     user: CurrentUserDep,
 ) -> DishInfo:
-    """Создание нового блюда. Только для администраторов и менеджеров."""
+    """Create a new dish. Only for administrators and managers."""
     validate_current_manager_or_admin(user)
     await validate_venue_ids(dish_in.venues_id, session)
 
@@ -53,12 +53,12 @@ async def get_dish(
     session: SessionDep,
     user: CurrentUserDep,
 ) -> DishInfo:
-    """Получение информации о блюде по ID."""
+    """Get information about a dish by its ID."""
     dish = await dish_crud.get(dish_id, session)
     if not dish or user.role == 'USER' and not dish.is_active:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Блюдо не найдено',
+            detail='Dish not found',
         )
 
     return dish
@@ -71,13 +71,13 @@ async def update_dish(
     session: SessionDep,
     user: CurrentUserDep,
 ) -> DishInfo:
-    """Обновление информации о блюде по ID. Только для администраторов и менеджеров."""
+    """Update information about a dish by its ID. Only for administrators and managers."""
     validate_current_manager_or_admin(user)
     dish = await dish_crud.get(dish_id, session)
     if not dish:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Блюдо не найдено',
+            detail='Dish not found',
         )
 
     updated_dish = await dish_crud.update(dish, dish_in, session)

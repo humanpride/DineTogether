@@ -12,14 +12,14 @@ from core.validators import (
     validate_venue_managers,
 )
 from crud.venue import venue_crud
-from schemas.venue import VenueCreate, VenueInfo, VenueUpdate
+from schemas.venue import VenueCreate, VenueInfo, VenueShortInfo, VenueUpdate
 
 router = APIRouter(prefix='/venues')
 
 
 @router.get(
     '/',
-    response_model=list[VenueInfo],
+    response_model=list[VenueShortInfo],
     response_model_exclude_none=True,
 )
 async def get_all_venue(
@@ -27,15 +27,17 @@ async def get_all_venue(
     user: CurrentUserDep,
     show_active: bool | None = None,
 ) -> Sequence[VenueInfo]:
-    """Получение списка кафе.
+    """Get a list of venues.
 
-    - для администраторов и менеджеров - все кафе
-    - для пользователей - только активные.
+    - for administrators and managers - all venues
+    - for users - active venues only.
 
-    show_active:
-        True -> Только активные кафе.
-        False -> Только неактивные кафе.
-        None -> Все кафе (и активные и не активные).
+    **show_active:**
+
+    - `True` - Active venues only
+    - `False` - Inactive venues only
+    - `None` - All venues (both active and inactive)
+
     """
     if user.role == UserRole.USER:
         show_active = True
@@ -52,9 +54,9 @@ async def create_venue(
     session: SessionDep,
     user: CurrentUserDep,
 ) -> VenueInfo:
-    """Создает новое кафе.
+    """Create a new venue.
 
-    Только для администраторов и менеджеров.
+    Only for administrators and managers.
     """
     current_user = validate_current_manager_or_admin(user)
     try:
@@ -66,7 +68,7 @@ async def create_venue(
         log(logging.INFO, str(error), current_user)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Некорректный список менеджеров',
+            detail='Invalid manager list',
         )
     try:
         venue = await venue_crud.create(obj_in=venue_in, session=session)
@@ -78,7 +80,7 @@ async def create_venue(
         log(logging.ERROR, str(error), None)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Некорректные данные кафе',
+            detail='Invalid venue data',
         ) from error
 
 
@@ -92,15 +94,17 @@ async def get_venue(
     user: CurrentUserDep,
     show_active: bool | None = None,
 ) -> VenueInfo:
-    """Получение информации о кафе по его ID.
+    """Get venue information by its ID.
 
-    - для администраторов и менеджеров - загружается любое кафе
-    - для пользователей - только активные, иначе 404
+    - for administrators and managers - any venue can be retrieved
+    - for users - active venues only, otherwise 404
 
-    show_active:
-        True -> Только активные кафе
-        False -> Только неактивные кафе
-        None -> Все кафе
+    **show_active:**
+
+     - `True` - Active venues only
+     - `False` - Inactive venues only
+     - `None` - All venues
+
     """
     venue = await venue_crud.get(venue_id, session)
     if (
@@ -108,10 +112,10 @@ async def get_venue(
         or (show_active is not None and venue.is_active != show_active)
         or (user.role == UserRole.USER and not venue.is_active)
     ):
-        log(logging.INFO, f'Venue[id={venue_id}, is_active={show_active}] не найдено', actor=user)
+        log(logging.INFO, f'Venue[id={venue_id}, is_active={show_active}] not found', actor=user)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Кафе не найдено.',
+            detail='Venue not found.',
         )
     return venue
 
@@ -126,9 +130,9 @@ async def update_venue(
     session: SessionDep,
     user: CurrentUserDep,
 ) -> VenueInfo:
-    """Обновление информации о кафе по его ID.
+    """Update venue information by its ID.
 
-    Только для администраторов и менеджеров.
+    Only for administrators and managers.
     """
     validate_current_manager_or_admin(user)
     venue = await validate_existed_venue(venue_id, session)
@@ -143,7 +147,7 @@ async def update_venue(
             log(logging.INFO, str(error), user)
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail='Некорректный список менеджеров',
+                detail='Invalid manager list',
             )
     updated_venue = await venue_crud.update(db_obj=venue, obj_in=venue_in, session=session)
     await session.commit()
