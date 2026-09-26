@@ -11,6 +11,7 @@ class VenueBase(BaseModel):
     name: str = Field(max_length=255)
     address: str = Field(max_length=255)
     phone: RussianPhone | None = None
+    timezone: str = Field(max_length=64, description='IANA timezone, for example Europe/Berlin')
     description: str | None = None
     photo_id: UUID4 | None = None
 
