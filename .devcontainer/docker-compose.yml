@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-      image: rabbitmq:3-management
+      image: rabbitmq:4-management
       hostname: rabbitmq
       networks:
       - venue-network
@@ -82,7 +82,7 @@ services:
       - dev
 
   maildev:
-    image: maildev/maildev
+    image: maildev/maildev:latest
     networks:
       - venue-network
     environment:
