@@ -50,21 +50,21 @@ async def get_media(
 async def upload_media(
     session: SessionDep,
     user: CurrentUserDep,
-    file: UploadFile = File(..., description='Загружаемый файл'),
+    file: UploadFile = File(..., description='Uploaded file'),
 ) -> MediaUploaded:
     """Upload image to the server."""
     try:
         log(
             logging.INFO,
             (
-                f'Получен запрос на загрузку файла "{file.filename}" '
-                f'с content_type "{file.content_type}" '
-                f'и размером {getattr(file, "size", "unknown")} байт.'
+                f'Received request to upload file "{file.filename}" '
+                f'with content_type "{file.content_type}" '
+                f'and size {getattr(file, "size", "unknown")} bytes.'
             ),
             actor=user,
         )
-        log(logging.INFO, 'Обработка файла...')
-        # коммит сессии происходит внутри save_media_file()
+        log(logging.INFO, 'Processing file...')
+        # session commit is performed inside save_media_file()
         return MediaUploaded(
             media_id=await save_media_file(
                 file=validate_file(file),
