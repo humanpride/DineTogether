@@ -4,6 +4,10 @@
   "service": "dev",
   "workspaceFolder": "/workspace",
   "remoteUser": "vscode",
+  "forwardPorts": [
+    8000,
+    5555
+  ],
   "features": {
     "ghcr.io/devcontainers-extra/features/uv:1": {},
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1.10.1": {
@@ -45,7 +49,8 @@
     "PYTHON_VERSION": "3.12",
     "UV_INIT_BARE": "false"
   },
-  "postCreateCommand": "echo 'POST CREATE STARTED' && git config --global --add safe.directory /workspace && git config --list --show-origin | grep safe.directory && make post-create",
+  "postCreateCommand": "echo 'POST CREATE STARTED\n' && git config --global --add safe.directory /workspace && git config --list --show-origin | grep safe.directory && make post-create",
+  "postStartCommand": "echo 'POST START COMMANDS\n' && bash .devcontainer/entrypoint.sh",
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ]
