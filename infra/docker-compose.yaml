@@ -30,12 +30,12 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management
     hostname: rabbitmq
     networks:
       - venue-network
     env_file:
-      - ../infra/.env
+      - ./.env
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -75,7 +75,7 @@ services:
       - app
 
   maildev:
-    image: maildev/maildev
+    image: maildev/maildev:latest
     networks:
       - venue-network
     environment:
