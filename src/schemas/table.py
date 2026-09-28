@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
-from schemas.cafe import CafeShortInfo
+from schemas.venue import VenueShortInfo
 
 
 class TableBase(BaseModel):
@@ -22,7 +22,7 @@ class TableInfo(TableBase):
     """Схема для отображения информации о столе."""
 
     id: int
-    cafe: CafeShortInfo
+    venue: VenueShortInfo
     is_active: bool
     created_at: datetime
     updated_at: datetime

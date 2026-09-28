@@ -8,34 +8,34 @@ from sqlalchemy.orm import selectinload
 from core.logging import log
 from crud.base import CRUDBase
 from models import User
-from models.cafe import Cafe
-from schemas.cafe import CafeCreate, CafeUpdate
+from models.venue import Venue
+from schemas.venue import VenueCreate, VenueUpdate
 
 
-class CRUDCafe(
+class CRUDVenue(
     CRUDBase[
-        Cafe,
-        CafeCreate,
-        CafeUpdate,
+        Venue,
+        VenueCreate,
+        VenueUpdate,
     ],
 ):
-    """CRUD-класс для работы с моделью Cafe."""
+    """CRUD-класс для работы с моделью Venue."""
 
-    _get_statement = select(Cafe).options(
-        selectinload(Cafe.managers),
+    _get_statement = select(Venue).options(
+        selectinload(Venue.managers),
     )
 
-    async def get(self, cafe_id: int, session: AsyncSession) -> Cafe:
+    async def get(self, venue_id: int, session: AsyncSession) -> Venue:
         """Возвращает кафе по его `id` или `None`."""
-        return await session.scalar(self._get_statement.where(Cafe.id == cafe_id))
+        return await session.scalar(self._get_statement.where(Venue.id == venue_id))
 
     async def get_all(
         self,
         session: AsyncSession,
         **filters: Union[bool, int, str, None],
-    ) -> Sequence[Cafe]:
+    ) -> Sequence[Venue]:
         """Получает список всех кафе."""
-        log(logging.DEBUG, f'CRUDCafe.get_all - получение всех объектов {self.model.__name__}')
+        log(logging.DEBUG, f'CRUDVenue.get_all - получение всех объектов {self.model.__name__}')
         stmt = self._get_statement
         mapper_attrs = inspect(self.model).attrs
         log(logging.DEBUG, 'Установка фильтров для ORM запроса...')
@@ -55,12 +55,12 @@ class CRUDCafe(
         log(logging.DEBUG, 'Выполнение запроса...')
         result = await session.execute(stmt)
 
-        log(logging.DEBUG, 'CRUDCafe.get_all - возврат результата')
+        log(logging.DEBUG, 'CRUDVenue.get_all - возврат результата')
         return result.scalars().all()
 
-    async def create(self, obj_in: CafeCreate, session: AsyncSession) -> Cafe:
+    async def create(self, obj_in: VenueCreate, session: AsyncSession) -> Venue:
         """Создаёт кафе и назначает менеджеров."""
-        cafe_data = obj_in.model_dump(
+        venue_data = obj_in.model_dump(
             exclude={'manager_ids'},
         )
         users = (
@@ -69,34 +69,34 @@ class CRUDCafe(
             )
         ).all()
 
-        cafe = Cafe(
+        venue = Venue(
             managers=users,
-            **cafe_data,
+            **venue_data,
         )
-        session.add(cafe)
+        session.add(venue)
         await session.flush()
 
-        return cafe
+        return venue
 
     async def get_managers_emails(
         self,
-        cafe: Cafe,
+        venue: Venue,
         session: AsyncSession,
     ) -> list[str]:
         """Возвращает email всех менеджеров кафе."""
-        return [manager.email for manager in cafe.managers if manager.email]
+        return [manager.email for manager in venue.managers if manager.email]
 
-    async def update(self, db_obj: Cafe, obj_in: CafeUpdate, session: AsyncSession) -> Cafe:
+    async def update(self, db_obj: Venue, obj_in: VenueUpdate, session: AsyncSession) -> Venue:
         """Обновляет кафе и назначает менеджеров."""
-        cafe_data = obj_in.model_dump(
+        venue_data = obj_in.model_dump(
             exclude={'manager_ids'},
             exclude_unset=True,
         )
         log(
             logging.DEBUG,
-            (f'CRUDCafe.update - обновление объекта Cafe[{db_obj.id}] данными: {cafe_data}'),
+            (f'CRUDVenue.update - обновление объекта Venue[{db_obj.id}] данными: {venue_data}'),
         )
-        for field, value in cafe_data.items():
+        for field, value in venue_data.items():
             #  Лишние поля отсекаются extra_forbiden в схемах pydantic
             setattr(db_obj, field, value)
 
@@ -114,4 +114,4 @@ class CRUDCafe(
         return db_obj
 
 
-cafe_crud = CRUDCafe(Cafe)
+venue_crud = CRUDVenue(Venue)

@@ -31,13 +31,18 @@ from schemas.user import (
 router = APIRouter(prefix='/auth')
 
 
-@router.post('/register', response_model=UserShortInfo, status_code=status.HTTP_201_CREATED)
+@router.post(
+    '/register',
+    response_model=UserShortInfo,
+    status_code=status.HTTP_201_CREATED,
+    summary='User registration',
+)
 async def register_user(
     user_data: UserRegister,
     session: SessionDep,
 ) -> UserShortInfo:
-    """Регистрация нового пользователя."""
-    # Проверка уникальности каждого поля отдельно
+    """Create new account."""
+    # Checking the uniqueness of each field
     await validate_unique_username(
         session=session,
         username=user_data.username,
@@ -61,11 +66,11 @@ async def register_user(
             user_id=None,
         )
 
-    # проверка на наличие хотя бы одного контактного поля (email или телефон)
+    # check for the presence of at least one contact field (email or phone)
     if not user_data.email and not user_data.phone:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Должен быть указан email или телефон',
+            detail='An email address or phone number must be provided.',
         )
 
     new_user = await user_crud.create_user(
@@ -85,57 +90,51 @@ async def register_user(
     return new_user
 
 
-@router.post('/login', response_model=Token, status_code=status.HTTP_200_OK)
+@router.post(
+    '/login',
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+    summary='User authentication',
+)
 async def auth_user(
     user_data: UserLogin,
     session: SessionDep,
 ) -> Token:
-    """Аутентификация пользователя."""
-    # Поиск пользователя по email или телефону
+    """Authenticate user with `email` or `phone`."""
+    # Search for a user by email or phone number
     try:
         login = await login_field_data(user_data.login)
     except ValueError as error:
-        log(logging.WARNING, f'Ошибка валидации логина: {error}')
+        log(logging.WARNING, f'Login validation error: {error}')
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Неверный email/телефон',
+            detail='Invalid email/phone number',
         )
     user = await user_crud.get_one_or_none(session, **login)
 
-    # Проверка существования пользователя и совпадения пароля
+    # Checking for user existence and password match
     if not user or not verify_password(user_data.password, user.hashed_password):
-        log(logging.WARNING, f'Неудачная попытка входа для логина: {user_data.login}')
+        log(logging.WARNING, f'Failed login attempt for login: {user_data.login}')
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Неверный email/телефон или пароль',
+            detail='Invalid email/phone number or password',
             headers={'WWW-Authenticate': 'Bearer'},
         )
 
     if not user.is_active:
-        log(logging.WARNING, f'Попытка входа в деактивированный аккаунт: {user_data.login}')
+        log(logging.WARNING, f'Attempt to log in to a deactivated account: {user_data.login}')
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Аккаунт деактивирован',
+            detail='Account deactivated',
         )
 
-    # Создание JWT токенов
+    # Creating JWT tokens
     token_data = {'sub': str(user.id), 'role': user.role.value}
     access_token = create_access_token(data=token_data)
-    log(logging.INFO, f'Пользователь {user.username} успешно аутентифицирован')
+    log(logging.INFO, f'User {user.username} has been successfully authenticated.')
     return Token(
         access_token=access_token,
         token_type='bearer',
-    )
-
-
-@router.post('/test-exception', status_code=status.HTTP_200_OK)
-async def logout(
-    current_user: CurrentUserDep,
-) -> dict:
-    """Тестирование вывода HTTPException."""
-    raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        detail='Тестовая ошибка для проверки обработки исключений',
     )
 
 
@@ -144,79 +143,82 @@ async def auth_user_form(
     session: SessionDep,
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> Token:
-    """Эндпоинт для OAuth2."""
-    # Поиск пользователя по email или телефону
+    """Endpoint for OAuth2."""
+    # Search for a user by email or phone number
     try:
         login = await login_field_data(form_data.username)
     except ValueError as error:
-        log(logging.WARNING, f'Ошибка валидации логина: {error}')
+        log(logging.WARNING, f'Login validation error: {error}')
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Неверный email/телефон',
+            detail='Invalid email/phone number',
         )
-    log(logging.DEBUG, f'Логин определён как {login}')
-    log(logging.DEBUG, f'Поиск пользователя с данными: {login}')
+    log(logging.DEBUG, f'The login is - {login}')
+    log(logging.DEBUG, f'Searching for user with credentials: {login}')
     user = await user_crud.get_one_or_none(session, **login)
     if not user:
-        log(logging.WARNING, f'Пользователь не найден для логина: {form_data.username}')
+        log(logging.WARNING, f'User not found for login: {form_data.username}')
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Неверный email/телефон или пароль',
+            detail='Invalid email/phone number or password',
             headers={'WWW-Authenticate': 'Bearer'},
         )
-    log(logging.DEBUG, 'Пользователь найден, проверка пароля...')
+    log(logging.DEBUG, 'User found, checking password...')
 
-    # Проверка корректности пароля
     if not verify_password(form_data.password, user.hashed_password):
-        log(logging.WARNING, f'Неудачная попытка входа для логина: {form_data.username}')
+        log(logging.WARNING, f'Failed login attempt for: {form_data.username}')
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Неверный email/телефон или пароль',
+            detail='Invalid email/phone number or password',
             headers={'WWW-Authenticate': 'Bearer'},
         )
 
-    # Создание JWT токенов
+    # Creating JWT tokens
     token_data = {'sub': str(user.id), 'role': user.role.value}
     access_token = create_access_token(data=token_data)
-    log(logging.INFO, f'Пользователь {user.username} успешно аутентифицирован')
+    log(logging.INFO, f'User {user.username} has been successfully authenticated')
     return Token(
         access_token=access_token,
         token_type='bearer',
     )
 
 
-@router.post('/change-password', status_code=status.HTTP_200_OK)
+@router.post(
+    '/change-password',
+    status_code=status.HTTP_200_OK,
+    summary='Change current user password',
+)
 async def change_password(
     password_data: UserChangePassword,
     current_user: CurrentUserDep,
     session: SessionDep,
 ) -> dict:
-    """Смена пароля пользователя."""
-    # Проверяем старый пароль
+    """Change user password."""
+    # verify old password
     if not verify_password(password_data.old_password, current_user.hashed_password):
         log(
             logging.WARNING,
-            'Введён неверный старый пароль',
+            'Incorrect old password entered.',
             actor=current_user.username,
         )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Неверный старый пароль',
+            detail='Incorrect old password',
         )
 
-    # Проверяем, что новый пароль отличается от старого
+    # compare the old and new passwords
     if verify_password(password_data.new_password, current_user.hashed_password):
         log(
             logging.WARNING,
-            'Введён новый пароль, который совпадает со старым',
+            'New password is the same as the old one.',
             actor=current_user.username,
         )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail='Новый пароль должен отличаться от старого',
+            detail='The new password must be different from the old one.',
         )
 
-    # Создаем объект для обновления
+    # creating an object for update
     user_update = UserUpdateDBPassword(
         hashed_password=get_password_hash(password_data.new_password),
     )
@@ -229,9 +231,9 @@ async def change_password(
     await session.commit()
     log(
         logging.INFO,
-        'Пользователь успешно изменил пароль',
+        'User has successfully changed their password.',
         actor=current_user.username,
     )
     return {
-        'message': 'Пароль успешно изменен',
+        'message': 'Password successfully changed.',
     }

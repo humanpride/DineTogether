@@ -1,38 +1,38 @@
 tags_metadata = [
     {
-        'name': 'Аутентификация',
-        'description': 'Получение данных для последующей авторизации',
+        'name': 'Authentication',
+        'description': 'Authentication processing',
     },
     {
-        'name': 'Пользователи',
-        'description': 'Управление пользователями',
+        'name': 'Users',
+        'description': 'User management',
     },
     {
-        'name': 'Кафе',
-        'description': 'Управление кафе',
+        'name': 'Venues',
+        'description': 'Venue management',
     },
     {
-        'name': 'Столы',
-        'description': 'Управление столами в кафе',
+        'name': 'Tables',
+        'description': 'Venue table management',
     },
     {
-        'name': 'Временные слоты',
-        'description': 'Управление временными слотами',
+        'name': 'Time slots',
+        'description': 'Time slot management',
+    },
+    # {
+    #     'name': 'Dishes',
+    #     'description': 'Dish management',
+    # },
+    # {
+    #     'name': 'Actions',
+    #     'description': 'Action management',
+    # },
+    {
+        'name': 'Bookings',
+        'description': 'Booking management',
     },
     {
-        'name': 'Блюда',
-        'description': 'Управление блюдами',
-    },
-    {
-        'name': 'Акции',
-        'description': 'Управление акциями',
-    },
-    {
-        'name': 'Бронирования',
-        'description': 'Управление бронированиями',
-    },
-    {
-        'name': 'Медиа',
-        'description': 'Управление изображениями',
+        'name': 'Media',
+        'description': 'Media file management',
     },
 ]

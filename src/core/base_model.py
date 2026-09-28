@@ -5,16 +5,16 @@ from sqlalchemy.orm import Mapped, declarative_base, declared_attr, mapped_colum
 
 
 def get_utc_now() -> datetime:
-    """Возвращает текущее дата/время UTC."""
+    """Return the current UTC datetime."""
     return datetime.now(timezone.utc)
 
 
 class PreBase:
-    """Базовый класс для всех таблиц."""
+    """Base class for all database models."""
 
     @declared_attr
     def __tablename__(cls) -> str:  # noqa: N805
-        """Возвращает имя таблицы на основе названия класса."""
+        """Return the table name derived from the class name."""
         return f'{cls.__name__.lower()}s'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

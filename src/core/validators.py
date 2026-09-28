@@ -1,13 +1,14 @@
 import logging
 from datetime import date, time
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 from PIL import Image, UnidentifiedImageError
 from fastapi import HTTPException, UploadFile, status
 from pydantic import EmailStr
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.base_model import get_utc_now
 from core.constants import (
     ALLOWED_FORMATS,
     ALLOWED_MEDIA_CONTENT_TYPES,
@@ -21,11 +22,10 @@ from core.constants import (
 )
 from core.dependencies import CurrentUserDep, SessionDep
 from core.logging import log
-from crud.cafe import cafe_crud
 from crud.user import user_crud
-from models import Cafe, Table, TimeSlot, User
-from models.booking import Booking, BookingTableSlot
-from schemas.booking import BookingCreate, BookingUpdate
+from crud.venue import venue_crud
+from models import Booking, BookingTableSlot, Table, TimeSlot, User, Venue
+from services.booking.datetime import local_to_utc
 
 
 async def _validate_unique_field(
@@ -107,59 +107,64 @@ async def validate_unique_phone(
     )
 
 
-async def validate_booking_references(
-    booking_in: BookingCreate | BookingUpdate,
+async def validate_booking_tables(
+    table_ids: Sequence[int],
+    venue_id: int,
     session: AsyncSession,
-    cafe_id: int,
 ) -> None:
-    """Валидирует данные бронирования."""
-    if not booking_in.tables_slots:
-        if isinstance(booking_in, BookingUpdate):
-            # Если это обновление и не переданы столы/слоты, пропускаем проверку
-            return
-        raise ValueError('Должен быть указан хотя бы один стол и слот бронирования')
-
-    # Проверяем, что все столы существуют и принадлежат этому кафе
-    table_ids = {item.table_id for item in booking_in.tables_slots}
+    """Validate selected tables."""
+    if not (unique_table_ids := set(table_ids)):
+        raise ValueError('At least one table must be selected.')
+    prepared_statement = select(Table.id).where(Table.id.in_(unique_table_ids))
     existing_table_ids = set(
-        await session.scalars(
-            select(Table.id).where(
-                Table.id.in_(table_ids),
-                Table.cafe_id == cafe_id,
-            ),
-        ),
+        (
+            await session.scalars(
+                prepared_statement.where(Table.venue_id == venue_id),
+            )
+        ).all(),
     )
-    missing_tables = table_ids - existing_table_ids
-    if missing_tables:
-        raise ValueError(f'Столы {missing_tables} не принадлежат кафе {cafe_id}')
-    # Проверяем, что столы активны
+    if missing_tables := unique_table_ids - existing_table_ids:
+        raise ValueError(f'Tables {missing_tables} are not belong to venue {venue_id}')
 
     inactive_table_ids = set(
-        await session.scalars(
-            select(Table.id).where(
-                Table.id.in_(table_ids),
-                Table.is_active.is_(False),
-            ),
-        ),
+        (
+            await session.scalars(
+                prepared_statement.where(Table.is_active.is_(False)),
+            )
+        ).all(),
     )
-
     if inactive_table_ids:
         raise ValueError(
-            f'Столы {inactive_table_ids} недоступны для бронирования',
+            f'Tables {inactive_table_ids} are not available for reservation.',
         )
-    # Проверяем, что все слоты существуют и принадлежат этому кафе
-    slot_ids = {item.slot_id for item in booking_in.tables_slots}
-    existing_slot_ids = set(
+
+
+async def validate_booking_slots(
+    slot_ids: Sequence[int],
+    venue: Venue,
+    booking_date: date,
+    session: AsyncSession,
+) -> Sequence[TimeSlot]:
+    """Validate selected slots."""
+    if not (unique_slot_ids := set(slot_ids)):
+        raise ValueError('At least one time slot must be selected.')
+    prepared_statement = select(TimeSlot).where(TimeSlot.id.in_(unique_slot_ids))
+
+    slots = (
         await session.scalars(
-            select(TimeSlot.id).where(
-                TimeSlot.id.in_(slot_ids),
-                TimeSlot.cafe_id == cafe_id,
-            ),
-        ),
-    )
-    missing_slots = slot_ids - existing_slot_ids
-    if missing_slots:
-        raise ValueError(f'Слоты {missing_slots} не принадлежат кафе {cafe_id}')
+            prepared_statement.where(TimeSlot.venue_id == venue.id),
+        )
+    ).all()
+
+    existing_slot_ids = {slot.id for slot in slots}
+    if missing_slots := unique_slot_ids - existing_slot_ids:
+        raise ValueError(f'Slots {missing_slots} are not belong to venue {venue.id}')
+
+    now = get_utc_now()
+    if any(local_to_utc(booking_date, slot.start_time, venue.timezone) < now for slot in slots):
+        raise ValueError('Cannot create a booking with slots in the past.')
+
+    return slots
 
 
 async def validate_booking_date(booking_date: date) -> None:
@@ -171,83 +176,93 @@ async def validate_booking_date(booking_date: date) -> None:
 
 
 async def validate_booking_conflicts(
-    booking_in: BookingCreate | BookingUpdate,
+    tables_slots: list[BookingTableSlot],
+    guest_number: int,
     session: AsyncSession,
     booking_id: int | None = None,
 ) -> None:
-    """Проверяет отсутствие пересечений бронирований и соответствие количества мест.
+    """Validate booking time conflicts and seating capacity.
 
-    Проверяет, что на указанную дату выбранные столы и временные
-    слоты не заняты другими активными бронированиями.
-    Проверяет, что указанное количество гостей не превышает количество мест за столом.
-    При обновлении бронирования текущее бронирование исключается
-    из проверки по его ID.
+    Ensures that:
+    - selected tables are not occupied during overlapping time intervals;
+    - the total seating capacity of the selected tables is sufficient.
+
+    When updating a booking, the current booking is excluded from the
+    conflict check.
     """
-    if not booking_in.tables_slots:
+    if not tables_slots:
         return
 
-    for item in booking_in.tables_slots:
-        stmt = (
-            select(BookingTableSlot.id)
-            .join(
-                Booking,
-                Booking.id == BookingTableSlot.booking_id,
-            )
-            .where(
-                Booking.booking_date == booking_in.booking_date,
-                Booking.status.in_(
-                    (
-                        BookingStatus.BOOKING,
-                        BookingStatus.ACTIVE,
-                    ),
-                ),
-                BookingTableSlot.table_id == item.table_id,
-                BookingTableSlot.slot_id == item.slot_id,
-            )
-            .limit(1)
+    conflict_conditions = [
+        and_(
+            BookingTableSlot.table_id == item.table_id,
+            BookingTableSlot.booking_start_utc < item.booking_end_utc,
+            BookingTableSlot.booking_end_utc > item.booking_start_utc,
         )
+        for item in tables_slots
+    ]
 
-        if booking_id is not None:
-            stmt = stmt.where(
-                Booking.id != booking_id,
-            )
-
-        if await session.scalar(stmt):
-            raise ValueError(
-                f'Стол {item.table_id} уже забронирован на выбранный слот',
-            )
-
-    table_ids = [pair.table_id for pair in booking_in.tables_slots]
-
-    total_seats = await session.scalar(
-        select(func.sum(Table.seat_number)).where(Table.id.in_(table_ids)),
+    stmt = (
+        select(BookingTableSlot.id)
+        .join(
+            Booking,
+            Booking.id == BookingTableSlot.booking_id,
+        )
+        .where(
+            or_(*conflict_conditions),
+            Booking.status.in_(
+                (
+                    BookingStatus.BOOKING,
+                    BookingStatus.ACTIVE,
+                ),
+            ),
+        )
+        .limit(1)
     )
 
-    if booking_in.guest_number > (total_seats or 0):
+    if booking_id is not None:
+        stmt = stmt.where(Booking.id != booking_id)
+
+    conflict = await session.scalar(stmt)
+
+    if conflict is not None:
         raise ValueError(
-            'Количество гостей превышает количество мест за выбранными столами',
+            'One or more selected tables are already booked for the selected time interval.',
+        )
+
+    table_ids = {item.table_id for item in tables_slots}
+
+    total_seats = await session.scalar(
+        select(func.sum(Table.seat_number)).where(
+            Table.id.in_(table_ids),
+        ),
+    )
+
+    if guest_number > (total_seats or 0):
+        raise ValueError(
+            'The number of guests exceeds the seating capacity of the selected tables.',
         )
 
 
-async def validate_unique_cafe_name(
-    cafe_name: str,
+async def validate_unique_venue_name(
+    venue_name: str,
     session: AsyncSession,
 ) -> None:
     """Проверяет уникальность названия кафе."""
-    stmt = select(Cafe).where(Cafe.name == cafe_name)
+    stmt = select(Venue).where(Venue.name == venue_name)
 
-    existing_cafe = await session.scalar(stmt)
+    existing_venue = await session.scalar(stmt)
 
-    if existing_cafe:
+    if existing_venue:
         raise ValueError(
-            f'Кафе с названием "{cafe_name}" уже существует',
+            f'Кафе с названием "{venue_name}" уже существует',
         )
 
 
-async def validate_cafe_managers(
+async def validate_venue_managers(
     manager_ids: list[int],
     session: AsyncSession,
-    cafe: Cafe | None = None,
+    venue: Venue | None = None,
 ) -> None:
     """Валидация менеджеров кафе при создании или обновлении кафе.
 
@@ -261,11 +276,11 @@ async def validate_cafe_managers(
         raise ValueError('У кафе должен быть хотя бы один менеджер')
 
     # исключаем из проверки тех, кто уже является менеджером этого кафе
-    if cafe:
+    if venue:
         ids_set = set(manager_ids) - set(
             (
                 await session.scalars(
-                    select(User.id).where(User.cafe_id == cafe.id),
+                    select(User.id).where(User.venue_id == venue.id),
                 )
             ).all(),
         )
@@ -312,7 +327,7 @@ async def validate_cafe_managers(
             await session.scalars(
                 select(User.id).where(
                     User.id.in_(active_managers),
-                    User.cafe_id.is_not(None),
+                    User.venue_id.is_not(None),
                 ),
             )
         ).all(),
@@ -324,30 +339,30 @@ async def validate_cafe_managers(
         )
 
 
-async def validate_existed_cafe(cafe_id: int, session: SessionDep) -> Cafe:
+async def validate_existed_venue(venue_id: int, session: SessionDep) -> Venue:
     """Проверяет существование кафе по ID."""
-    cafe = await cafe_crud.get(cafe_id=cafe_id, session=session)
-    if cafe is None:
-        log(logging.INFO, f'Кафе с id={cafe_id} не найдено')
+    venue = await venue_crud.get(venue_id=venue_id, session=session)
+    if venue is None:
+        log(logging.INFO, f'Кафе с id={venue_id} не найдено')
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Кафе с таким id не найдено.',
         )
-    return cafe
+    return venue
 
 
-async def validate_cafe_ids(cafe_ids: list[int] | None, session: SessionDep) -> None:
+async def validate_venue_ids(venue_ids: list[int] | None, session: SessionDep) -> None:
     """Проверяет по id существование кафе из списка."""
-    if not cafe_ids:
+    if not venue_ids:
         return
-    existed_cafe_ids = set(
+    existed_venue_ids = set(
         await session.scalars(
-            select(Cafe.id).where(Cafe.id.in_(cafe_ids)),
+            select(Venue.id).where(Venue.id.in_(venue_ids)),
         ),
     )
-    missing_cafe_ids = existed_cafe_ids - set(cafe_ids)
-    if missing_cafe_ids:
-        log(logging.INFO, f'Кафе с id={missing_cafe_ids} не существует')
+    missing_venue_ids = existed_venue_ids - set(venue_ids)
+    if missing_venue_ids:
+        log(logging.INFO, f'Кафе с id={missing_venue_ids} не существует')
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Одно или несколько из указанных кафе не найдены',
@@ -410,7 +425,7 @@ def validate_file(file: UploadFile) -> UploadFile:
 
 
 async def validate_duplicate_slot(
-    cafe_id: int,
+    venue_id: int,
     start_time: time,
     end_time: time,
     session: AsyncSession,
@@ -419,7 +434,7 @@ async def validate_duplicate_slot(
     """Проверяет пересечение временного слота с существующими."""
     stmt = (
         select(TimeSlot)
-        .where(TimeSlot.cafe_id == cafe_id)
+        .where(TimeSlot.venue_id == venue_id)
         .where(TimeSlot.is_active.is_(True))
         .where(TimeSlot.start_time < end_time)
         .where(TimeSlot.end_time > start_time)

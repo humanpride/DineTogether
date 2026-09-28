@@ -7,16 +7,19 @@ from core.base_model import Base
 
 
 class Media(Base):
-    """Модель загруженного файла на сервере.
+    """Represent a file uploaded and stored on the server.
 
-    Поля:
-        * id: UUID
-        * path: str (относительный путь к файлу на сервере)
+    Attributes:
+        id: Unique identifier of the file.
+        path: Relative path to the file on the server.
 
-    Внутри `path` может храниться просто название файла (тогда файл находится в папке `media`)
+    The `path` field can contain either a filename (for files stored directly
+    in the `media` directory) or a nested path, for example:
+    `images/avatars/{uuid}.jpg`.
 
-    А также путь к файлу, например `images/avatars/{uuid}.jpg`, тогда полный путь будет
+    In the latter case, the full file path will be:
     `media/images/avatars/{uuid}.jpg`.
+
     """
 
     __tablename__ = 'media_files'

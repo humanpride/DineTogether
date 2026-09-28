@@ -1,14 +1,13 @@
 name: DineTogether
 
-services:
-  dev:
-    build: .
-    volumes:
-      - ..:/workspace:cached
-    command: sleep infinity
+networks:
+  venue-network:
 
+services:
   db:
     image: postgres:17-alpine
+    networks:
+      - venue-network
     env_file:
       - ../infra/.env
     environment:
@@ -24,27 +23,77 @@ services:
                -c wal_buffers=16MB
                -c default_statistics_target=100
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
-      interval: 30s
-      timeout: 10s
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB',
+        ]
+      interval: 6s
+      timeout: 5s
       retries: 5
     restart: unless-stopped
 
   rabbitmq:
-      image: rabbitmq:3-management
+      image: rabbitmq:4-management
       hostname: rabbitmq
+      networks:
+      - venue-network
+      env_file:
+        - ../infra/.env
       ports:
         - "5672:5672"
         - "15672:15672"
-      environment:
-        RABBITMQ_DEFAULT_USER: guest
-        RABBITMQ_DEFAULT_PASS: guest
+      healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+        interval: 8s
+        timeout: 7s
+        retries: 5
       restart: unless-stopped
+
+  dev:
+    build: .
+    networks:
+      - venue-network
+    ports:
+      - "8000:8000"
+      - "5555:5555"
+    env_file:
+      - ../infra/.env
+    volumes:
+      - ..:/workspace:cached
+      - logs:/app/logs
+      - media_volume:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: sleep infinity
+
+  nginx:
+    image: nginx:alpine
+    networks:
+      - venue-network
+    ports:
+      - "888:80"
+    volumes:
+      - ../infra/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - dev
+
   maildev:
-    image: maildev/maildev
+    image: maildev/maildev:latest
+    networks:
+      - venue-network
+    environment:
+      - TZ=Asia/Yerevan
     ports:
       - "1080:1080"
       - "1025:1025"
+    depends_on:
+    - dev
 
 volumes:
   pgdata:
+  media_volume:
+  logs:

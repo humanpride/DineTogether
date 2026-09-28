@@ -1,13 +1,13 @@
 name: DineTogether
 
 networks:
-  cafe-network:
+  venue-network:
 
 services:
   db:
     image: postgres:17-alpine
     networks:
-      - cafe-network
+      - venue-network
     env_file:
       - ./.env
     environment:
@@ -23,7 +23,7 @@ services:
                -c wal_buffers=16MB
                -c default_statistics_target=100
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 6s
       timeout: 5s
       retries: 5
@@ -33,13 +33,12 @@ services:
     image: rabbitmq:3-management
     hostname: rabbitmq
     networks:
-      - cafe-network
+      - venue-network
+    env_file:
+      - ../infra/.env
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: $RABBIT_USER
-      RABBITMQ_DEFAULT_PASS: $RABBIT_USER_PASS
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 8s
@@ -49,7 +48,7 @@ services:
   app:
     build: ../
     networks:
-      - cafe-network
+      - venue-network
     env_file:
       - ./.env
     ports:
@@ -67,9 +66,9 @@ services:
   nginx:
     image: nginx:alpine
     networks:
-      - cafe-network
+      - venue-network
     ports:
-      - "80:80"
+      - "888:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
@@ -78,9 +77,9 @@ services:
   maildev:
     image: maildev/maildev
     networks:
-      - cafe-network
+      - venue-network
     environment:
-      - TZ=Europe/Moscow
+      - TZ=Asia/Yerevan
     ports:
       - "1080:1080"
       - "1025:1025"

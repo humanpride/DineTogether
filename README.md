@@ -135,7 +135,7 @@
 * `id`
 * `seat_number`
 * `description`
-* `cafe`
+* `venue`
 * `is_active`
 * `created_at`
 * `updated_at`
@@ -148,7 +148,7 @@
 * `start_time`
 * `end_time`
 * `description`
-* `cafe`
+* `venue`
 * `is_active`
 * `created_at`
 * `updated_at`
@@ -159,7 +159,7 @@
 
 * `id`
 * `user`
-* `cafe`
+* `venue`
 * `tables_slots`
 * `guest_number`
 * `note`
@@ -178,7 +178,7 @@
 * `description`
 * `photo_id`
 * `price`
-* `cafes`
+* `venues`
 * `is_active`
 * `created_at`
 * `updated_at`
