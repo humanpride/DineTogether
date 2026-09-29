@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    image: rabbitmq:4-management
+    image: rabbitmq:3-management
     hostname: rabbitmq
     networks:
       - venue-network
