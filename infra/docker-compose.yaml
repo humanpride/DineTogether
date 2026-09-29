@@ -76,18 +76,6 @@ services:
     depends_on:
       - app
 
-  maildev:
-    image: maildev/maildev:latest
-    networks:
-      - venue-network
-    environment:
-      - TZ=Asia/Yerevan
-    # ports:
-    #   - "1080:1080"
-    #   - "1025:1025"
-    depends_on:
-      - app
-
 volumes:
   pgdata:
   media_volume:
