@@ -72,11 +72,21 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASS }}
           script: |
+            set -e
+
             cd ${{ secrets.SERVER_PROJECT_PATH }}/infra
+
+            if [ ! -f .env ]; then
+              echo "ERROR: Required file .env does not exist in $(pwd)"
+              exit 1
+            fi
+
             docker compose pull
             docker compose up -d
             docker system prune -f
+
             echo "=== Container status ==="
             docker compose ps
+
             echo "=== App logs (last 30 lines) ==="
             docker compose logs app --tail=30
