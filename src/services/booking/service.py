@@ -214,7 +214,7 @@ class BookingService:
             timezone_name=venue.timezone,
         ).strftime('%d.%m.%Y %H:%M')
 
-        send_booking_updated_to_managers(
+        send_booking_updated_to_managers.delay(
             manager_emails=[manager.email for manager in venue.managers],
             user_name=booking.user.username,
             user_email=booking.user.email,
