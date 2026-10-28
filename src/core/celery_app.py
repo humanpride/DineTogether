@@ -2,15 +2,17 @@ from celery import Celery
 
 from core.settings import settings
 
-# Настройки celery.
 celery_app = Celery(
     'DineTogether',
     broker=settings.celery_broker,
-    backend='rpc://',  # Сделал только для тестирования.
     include=['tasks.email'],
-    # TODO: backend='redis://localhost'
 )
 
-# Эти команды нужны для того, чтобы запустить брокер при деплое на сервер.
-# Запуск Celery командой celery --app core.celery_app worker --pool threads --loglevel INFO.
-# Запуск Flower командой celery --app core.celery_app flower.
+celery_app.conf.update(
+    # Результаты задач отправки писем приложением не используются.
+    task_ignore_result=True,
+    # RabbitMQ 4.3+ по умолчанию запрещает non-durable,
+    # non-exclusive classic queues.
+    control_queue_exclusive=True,
+    event_queue_exclusive=True,
+)

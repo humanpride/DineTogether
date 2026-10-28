@@ -82,7 +82,17 @@ jobs:
             fi
 
             docker compose pull
-            docker compose up -d
+            if docker compose up -d --wait --wait-timeout 120; then
+              echo "Application is ready; database migrations completed."
+            else
+              deploy_status=$?
+              echo "ERROR: Deployment failed: a service exited, became unhealthy, or did not become ready within 120 seconds."
+              echo "=== App startup logs (including Alembic errors) ==="
+              docker compose logs --no-color app || true
+              echo "=== Container status ==="
+              docker compose ps --all || true
+              exit "$deploy_status"
+            fi
             docker system prune -f
 
             echo "=== Container status ==="
