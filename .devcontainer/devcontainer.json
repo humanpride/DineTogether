@@ -35,7 +35,6 @@
             "source.fixAll.ruff": "explicit"
           }
         },
-        "ruff.nativeServer": true,
         "ruff.configurationPreference": "filesystemFirst",
         "mypy-type-checker.args": [
           "--config-file=pyproject.toml"
