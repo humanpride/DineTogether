@@ -56,6 +56,9 @@ COPY --chown=$USER_ID:$GROUP_ID ./src /app
 
 EXPOSE 8000/tcp
 
+HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=3 \
+  CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/openapi.json', timeout=2).close()"]
+
 USER devuser
 
 ENTRYPOINT [ "/bin/sh", "entrypoint.sh" ]
