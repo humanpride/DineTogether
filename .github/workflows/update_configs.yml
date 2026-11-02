@@ -1,11 +1,11 @@
 name: Update server configs
 
 on:
-  push:
-    branches:
-      - dev
-    paths:
-      - infra/*
+  # push:
+  #   branches:
+  #     - dev
+  #   paths:
+  #     - infra/*
   workflow_dispatch:
 
 jobs:
