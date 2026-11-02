@@ -12,6 +12,9 @@ on:
       - uv.lock
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   style-check:
     runs-on: ubuntu-latest
